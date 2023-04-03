@@ -1,0 +1,25 @@
+{
+  "name": "balancer-v1-subgraph",
+  "license": "MIT",
+  "scripts": {
+    "format": "npx prettier --write ../balancer-v1",
+    "codegen": "graph codegen",
+    "prepare:constants": "mustache protocols/${npm_config_protocol}/config/deployments/${npm_config_id}/configurations.json src/common/constants.mustache > src/common/constants.ts",
+    "deploy:local": "yarn prepare:yaml &&  yarn prepare:constants &&    node ../../deployment/deployment.js --subgraph=${npm_config_subgraph} --protocol=${npm_config_protocol} --network=${npm_config_network} --location=${npm_config_location} --printlogs=${npm_config_printlogs} --merge=${npm_config_merge}",
+    "test": "graph test"
+  },
+  "devDependencies": {
+    "@graphprotocol/graph-cli": "^0.32.0",
+    "@graphprotocol/graph-ts": "^0.27.0",
+    "matchstick-as": "^0.4.2",
+    "prettier": "2.6.1"
+  },
+  "dependencies": {
+    "babel-polyfill": "^6.26.0",
+    "babel-register": "^6.26.0",
+    "keytar": "^5.0.0",
+    "truffle": "^5.1.0",
+    "truffle-contract": "^4.0.5",
+    "truffle-hdwallet-provider": "^1.0.4"
+  }
+}
