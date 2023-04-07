@@ -1,4 +1,4 @@
-import {Address, BigDecimal, BigInt, dataSource, ethereum} from '@graphprotocol/graph-ts'
+import {Address, BigDecimal, BigInt, Bytes, dataSource, ethereum} from '@graphprotocol/graph-ts'
 import {
   DexAmmProtocol,
   LiquidityPool,
@@ -7,12 +7,12 @@ import {
   TokenPrice,
   Transaction,
   User
-} from '../../../balancer-v1/generated/schema'
-import {BTokenBytes} from '../../../balancer-v1/generated/templates/Pool/BTokenBytes'
-import {BToken} from '../../../balancer-v1/generated/templates/Pool/BToken'
-import {CRPFactory} from '../../../balancer-v1/generated/Factory/CRPFactory'
-import {ConfigurableRightsPool} from '../../../balancer-v1/generated/Factory/ConfigurableRightsPool'
-import * as constants from "../../../balancer-v1/src/common/constants";
+} from '../../generated/schema'
+import {BTokenBytes} from '../../generated/templates/Pool/BTokenBytes'
+import {BToken} from '../../generated/templates/Pool/BToken'
+import {CRPFactory} from '../../generated/Factory/CRPFactory'
+import {ConfigurableRightsPool} from '../../generated/Factory/ConfigurableRightsPool'
+import * as constants from "../../src/common/constants";
 
 let network = dataSource.network()
 
@@ -36,12 +36,12 @@ if (network == 'rinkeby') {
   CRP_FACTORY = '0xA3F9145CB0B50D907930840BB2dcfF4146df8Ab4'
 }
 
-// export function hexToDecimal(hexString: string, decimals: i32): BigDecimal {
-//   let bytes = Bytes.fromHexString(hexString).reverse() as Bytes
-//   let bi = BigInt.fromUnsignedBytes(bytes)
-//   let scale = BigInt.fromI32(10).pow(decimals as u8).toBigDecimal()
-//   return bi.divDecimal(scale)
-// }
+export function hexToDecimal(hexString: string, decimals: i32): BigDecimal {
+  let bytes = Bytes.fromHexString(hexString).reverse() as Bytes
+  let bi = BigInt.fromUnsignedBytes(bytes)
+  let scale = BigInt.fromI32(10).pow(decimals as u8).toBigDecimal()
+  return bi.divDecimal(scale)
+}
 
 // export function bigIntToDecimal(amount: BigInt, decimals: i32): BigDecimal {
 //   let scale = BigInt.fromI32(10).pow(decimals as u8).toBigDecimal()
@@ -53,6 +53,7 @@ if (network == 'rinkeby') {
 //   return amount.div(scale)
 // }
 export function getOrCreateProtocol(factoryAddress: string): DexAmmProtocol {
+
   let factory = DexAmmProtocol.load(factoryAddress)
 
   // if no factory yet, set up blank initial
@@ -84,7 +85,7 @@ export function getOrCreateLiquidityPool(poolAddress: string): LiquidityPool {
     pool.publicSwap = false
     pool.finalized = false
     pool.active = true
-    pool.swapFee = BigDecimal.fromString('0.000001')
+    pool.swapFee = BigDecimal.fromString('100000000000000000000')
     pool.totalWeight = constants.BIGDECIMAL_ZERO
     pool.totalShares = constants.BIGDECIMAL_ZERO
     pool.totalSwapVolume = constants.BIGDECIMAL_ZERO

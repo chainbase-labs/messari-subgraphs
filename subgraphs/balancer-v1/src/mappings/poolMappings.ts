@@ -1,4 +1,4 @@
-import {Address, BigDecimal, BigInt} from '@graphprotocol/graph-ts'
+import {Address, BigDecimal, BigInt, log} from '@graphprotocol/graph-ts'
 import {
   GulpCall,
   LOG_CALL,
@@ -7,23 +7,23 @@ import {
   LOG_SWAP,
   Pool as BPool,
   Transfer
-} from '../../../balancer-v1/generated/templates/Pool/Pool'
-import {Swap, TokenPrice} from '../../../balancer-v1/generated/schema'
+} from '../../generated/templates/Pool/Pool'
+import {Swap, TokenPrice} from '../../generated/schema'
 import {
   decrPoolCount,
   getCrpUnderlyingPool,
   getOrCreateLiquidityPool,
   getOrCreatePoolShareEntity,
   getOrCreateProtocol,
-  getOrCreateTokenEntity,
+  getOrCreateTokenEntity, hexToDecimal,
   saveTransaction,
   updatePoolLiquidity
 } from './helpers'
 import {
   ConfigurableRightsPool,
   OwnershipTransferred
-} from '../../../balancer-v1/generated/Factory/ConfigurableRightsPool'
-import * as constants from "../../../balancer-v1/src/common/constants";
+} from '../../generated/Factory/ConfigurableRightsPool'
+import * as constants from "../../src/common/constants";
 
 /************************************
  ********** Pool Controls ***********
@@ -32,7 +32,9 @@ import * as constants from "../../../balancer-v1/src/common/constants";
 export function handleSetSwapFee(event: LOG_CALL): void {
   let poolId = event.address.toHex()
   let pool = getOrCreateLiquidityPool(poolId)
-  let swapFee = BigDecimal.fromString(event.params.data.toHexString().slice(-40))
+
+
+  let swapFee = hexToDecimal(event.params.data.toHexString().slice(-40), 0)
 
   pool.swapFee = swapFee
   pool.save()

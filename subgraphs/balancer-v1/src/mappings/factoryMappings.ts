@@ -1,9 +1,9 @@
-import {Address} from '@graphprotocol/graph-ts'
-import {LOG_NEW_POOL} from '../../../balancer-v1/generated/Factory/Factory'
+import {Address,log} from '@graphprotocol/graph-ts'
+import {LOG_NEW_POOL} from '../../generated/Factory/Factory'
 import {
   CrpController as CrpControllerContract,
   Pool as PoolContract
-} from '../../../balancer-v1/generated/templates'
+} from '../../generated/templates'
 import {
   getCrpCap,
   getCrpController,
@@ -16,7 +16,7 @@ import {
 } from './helpers'
 import {
   ConfigurableRightsPool
-} from '../../../balancer-v1/generated/Factory/ConfigurableRightsPool';
+} from '../../generated/Factory/ConfigurableRightsPool';
 
 export function handleNewPool(event: LOG_NEW_POOL): void {
   let factory = getOrCreateProtocol(event.address.toHexString())
@@ -35,11 +35,8 @@ export function handleNewPool(event: LOG_NEW_POOL): void {
     pool.name = getCrpName(crp)
     let crpControl = getCrpController(crp)
 
-    if (crpControl !== null) {
-      console.log(crpControl)
+    if (crpControl) {
       pool.crpController = Address.fromString(crpControl)
-    } else {
-      console.log("crpControl is null")
     }
     pool.rights = getCrpRights(crp)
     pool.cap = getCrpCap(crp)
