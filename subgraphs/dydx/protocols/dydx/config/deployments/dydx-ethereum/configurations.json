@@ -1,0 +1,8 @@
+{
+  "network": "mainnet",
+  "protocolName": "dydx",
+  "protocolSlug": "dydx",
+  "defaultNetwork": "Network.MAINNET",
+  "subgraphId": "",
+  "graftStartBlock": ""
+}

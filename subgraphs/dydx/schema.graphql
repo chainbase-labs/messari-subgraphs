@@ -1,0 +1,216 @@
+# Subgraph Schema: Lending Protocol
+# Version: 3.0.0
+# See https://github.com/messari/subgraphs/blob/master/docs/SCHEMA.md for details
+
+enum Network {
+  ARBITRUM_ONE
+  ARWEAVE_MAINNET
+  AURORA
+  AVALANCHE
+  BOBA
+  BSC # aka BNB Chain
+  CELO
+  COSMOS
+  CRONOS
+  MAINNET # Ethereum Mainnet
+  FANTOM
+  FUSE
+  HARMONY
+  JUNO
+  MOONBEAM
+  MOONRIVER
+  NEAR_MAINNET
+  OPTIMISM
+  OSMOSIS
+  MATIC # aka Polygon
+  XDAI # aka Gnosis Chain
+}
+
+enum ProtocolType {
+  EXCHANGE
+  LENDING
+  YIELD
+  BRIDGE
+  GENERIC
+  # Will add more
+}
+
+type Market @entity {
+  " Unique ID for a market "
+  id: ID!
+
+  " Token associated to this market "
+  token: Token!
+
+  " Creation timestamp in seconds "
+  created: BigInt!
+
+  " Block number in which the market was created "
+  createdAtBlock: BigInt!
+
+  " Transaction hash in which the market was created "
+  createdAtTransaction: Bytes!
+
+  " Current market state "
+  state: MarketState
+
+  " Timestamp of last interest index update "
+  lastIndexUpdate: BigInt
+}
+
+type MarketState @entity {
+  id: ID!
+
+  " Market reference "
+  market: Market!
+
+  " The amount borrowed vs the amount lent "
+  utilization: BigDecimal!
+
+  " Current interest rate for borrowers "
+  borrowerInterestRate: BigDecimal!
+
+  " Current interest rate for lenders "
+  lenderInterestRate: BigDecimal!
+
+  " Current interest rate for traders "
+  traderInterestRate: BigDecimal!
+
+  " Timestamp in seconds "
+  timestamp: BigInt!
+}
+
+type Token @entity {
+  " Token address "
+  id: ID!
+
+  " Token address "
+  address: Bytes!
+
+  " Number of decimals the token uses "
+  decimals: Int!
+
+  " Human-readable name of the token "
+  name: String!
+
+  " Symbol of the token "
+  symbol: String!
+
+  " Associated market "
+  market: Market!
+
+  " Current price "
+  price: TokenPrice
+}
+
+type TokenPrice @entity {
+  " Equals to:  <tokenAddress>-<timestamp>"
+  id: ID!
+
+  " Token reference "
+  token: Token!
+
+  " Asset price "
+  value: BigDecimal!
+
+  " Timestamp in seconds "
+  timestamp: BigInt!
+
+  " Block number "
+  block: BigInt!
+}
+
+enum PositionStatus {
+  Open
+  Closed
+  Expired
+  Liquidated
+}
+
+type LongPosition @entity {
+  " Equals to: <accountOwner>-<accountNumber>-<takerMarket> "
+  id: ID!
+
+  " Position owner's address "
+  accountOwner: Bytes!
+
+  " Position account number "
+  accountNumber: BigInt!
+
+  " Current position amount "
+  amount: BigInt!
+
+  " Market maker reference  "
+  makerMarket: Market
+
+  " Market taker reference "
+  takerMarket: Market
+
+  " String representation of position market "
+  market: String
+
+  " Contract address for the dYdX exchange wrapper "
+  exchangeWrapper: Bytes!
+
+  " Initial deposit amount "
+  marginDeposit: BigInt!
+
+  " Initial leverage "
+  leverage: BigDecimal
+
+  " Price the position opened at "
+  openPrice: BigDecimal!
+
+  " Position status "
+  status: PositionStatus!
+
+  " Timestamp when the position was opened "
+  created: BigInt!
+
+  " Timestamp the position expires "
+  expiration: BigInt
+}
+
+type ShortPosition @entity {
+  " Equals to: <accountOwner>-<accountNumber>-<takerMarket> "
+  id: ID!
+
+  "Position owner's address"
+  accountOwner: Bytes!
+
+  "Position account number"
+  accountNumber: BigInt!
+
+  " Current position amount "
+  amount: BigInt!
+
+  " Market maker reference "
+  makerMarket: Market
+
+  " Market taker reference "
+  takerMarket: Market
+
+  " String representation of position market "
+  market: String
+
+  " Contract address for the dYdX exchange wrapper "
+  exchangeWrapper: Bytes!
+
+  " Initial deposit amount "
+  marginDeposit: BigInt!
+
+  " Initial leverage "
+  leverage: BigDecimal
+
+  " Price the position opened at "
+  openPrice: BigDecimal!
+
+  " Position status "
+  status: PositionStatus!
+
+  " Time the position was opened "
+  created: BigInt!
+
+  " Timestamp the position expires "
+  expiration: BigInt
+}

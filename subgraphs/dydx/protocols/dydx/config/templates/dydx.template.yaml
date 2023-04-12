@@ -1,0 +1,102 @@
+specVersion: 0.0.4
+schema:
+  file: ./schema.graphql
+dataSources:
+  - kind: ethereum/contract
+  - name: Margin
+    network: mainnet
+    source:
+      abi: SoloMargin
+      address: '0x1e0447b19bb6ecfdae1e4ae1694b0c3659614e4e'
+      startBlock: 7575711
+    mapping:
+      kind: ethereum/events
+      apiVersion: 0.0.7
+      language: wasm/assemblyscript
+      file: ./src/mapping/margin.ts
+      abis:
+        - name: SoloMargin
+          file: ./abis/SoloMargin.json
+        - name: ERC20
+          file: ./abis/ERC20.json
+      entities:
+        - Market
+        - MarketState
+        - Token
+        - TokenPrice
+        - LongPosition
+        - ShortPosition
+      eventHandlers:
+        - event: LogAddMarket(uint256,address)
+          handler: handleAddMarket
+        - event: LogIndexUpdate(indexed uint256,(uint96,uint96,uint32))
+          handler: handleIndexUpdate
+        - event: LogBuy(indexed address,uint256,uint256,uint256,((bool,uint256),(bool,uint128)),((bool,uint256),(bool,uint128)),address)
+          handler: handleBuy
+        - event: LogSell(indexed address,uint256,uint256,uint256,((bool,uint256),(bool,uint128)),((bool,uint256),(bool,uint128)),address)
+          handler: handleSell
+        - event: LogLiquidate(indexed address,uint256,indexed address,uint256,uint256,uint256,((bool,uint256),(bool,uint128)),((bool,uint256),(bool,uint128)),((bool,uint256),(bool,uint128)),((bool,uint256),(bool,uint128)))
+          handler: handleLiquidate
+  - name: Expiry
+    kind: ethereum/contract
+    network: mainnet
+    source:
+      abi: Expiry
+      address: '0x0ece224fbc24d40b446c6a94a142dc41fae76f2d'
+      startBlock: 7575714
+    mapping:
+      kind: ethereum/events
+      apiVersion: 0.0.7
+      language: wasm/assemblyscript
+      file: ./src/mapping/margin.ts
+      abis:
+        - name: Expiry
+          file: ./abis/Expiry.json
+      entities:
+        - LongPosition
+        - ShortPosition
+      eventHandlers:
+        - event: ExpirySet(address,uint256,uint256,uint32)
+          handler: handleExpiration
+  - name: SaiPriceOracle
+    kind: ethereum/contract
+    network: mainnet
+    source:
+      abi: DaiPriceOracle
+      address: '0x787f552bdc17332c98aa360748884513e3cb401a'
+      startBlock: 7575713
+    mapping:
+      kind: ethereum/events
+      apiVersion: 0.0.7
+      language: wasm/assemblyscript
+      file: ./src/oracles/sai-price.ts
+      abis:
+        - name: DaiPriceOracle
+          file: ./abis/DaiPriceOracle.json
+      entities:
+        - Token
+        - TokenPrice
+      eventHandlers:
+        - event: PriceSet((uint128,uint32))
+          handler: handlePriceSet
+  - name: DaiPriceOracle
+    kind: ethereum/contract
+    network: mainnet
+    source:
+      abi: DaiPriceOracle
+      address: '0xccfcf083335633c48e99872899586113a2bd08d8'
+      startBlock: 8977334
+    mapping:
+      kind: ethereum/events
+      apiVersion: 0.0.7
+      language: wasm/assemblyscript
+      file: ./src/oracles/dai-price.ts
+      abis:
+        - name: DaiPriceOracle
+          file: ./abis/DaiPriceOracle.json
+      entities:
+        - Token
+        - TokenPrice
+      eventHandlers:
+        - event: PriceSet((uint128,uint32))
+          handler: handlePriceSet

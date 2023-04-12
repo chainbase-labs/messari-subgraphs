@@ -4785,6 +4785,36 @@
       }
     }
   },
+  "dydx": {
+    "schema": "lending",
+    "base": "dydx",
+    "protocol": "dydx",
+    "project": "dydx",
+    "deployments": {
+      "dydx-ethereum": {
+        "network": "ethereum",
+        "status": "dev",
+        "versions": {
+          "schema": "1.3.0",
+          "subgraph": "1.1.2",
+          "methodology": "1.0.0"
+        },
+        "files": {
+          "template": "dydx.template.yaml"
+        },
+        "options": {
+          "prepare:yaml": false,
+          "prepare:constants": false
+        },
+        "services": {
+          "hosted-service": {
+            "slug": "dydx-ethereum",
+            "query-id": "dydx-ethereum"
+          }
+        }
+      }
+    }
+  },
   "vvs-finance": {
     "schema": "dex-amm",
     "base": "uniswap-forks",
