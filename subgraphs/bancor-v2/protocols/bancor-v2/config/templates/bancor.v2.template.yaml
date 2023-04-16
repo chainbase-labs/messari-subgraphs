@@ -1,0 +1,417 @@
+specVersion: 0.0.2
+description: Bancor
+repository:
+schema:
+  file: ./schema.graphql
+dataSources:
+  - kind: ethereum/contract
+    name: CrowdsaleContract
+    network: mainnet
+    source:
+      address: "0xbbc79794599b19274850492394004087cbf89710"
+      abi: CrowdsaleContract
+      startBlock: 3851207
+    mapping:
+      kind: ethereum/events
+      apiVersion: 0.0.7
+      language: wasm/assemblyscript
+      entities:
+        - OwnerUpdate
+      abis:
+        - name: CrowdsaleContract
+          file: ./abis/CrowdsaleContract.json
+        - name: ConverterRegistryContract
+          file: ./abis/ConverterRegistryContract.json
+        - name: ConverterContract
+          file: ./abis/ConverterContract.json
+        - name: SmartTokenContract
+          file: ./abis/SmartTokenContract.json
+        - name: ERC20Contract
+          file: ./abis/ERC20Contract.json
+        - name: ERC20SymbolBytes
+          file: ./abis/ERC20SymbolBytes.json
+        - name: ERC20NameBytes
+          file: ./abis/ERC20NameBytes.json
+      eventHandlers:
+        - event: OwnerUpdate(address,address)
+          handler: createBackfill
+      file: ./src/mappings/crowdsale.ts
+      #  - kind: ethereum/contract
+      #    name: ContractRegistryContract
+      #    network: mainnet
+      #    source:
+      #      address: "0x52Ae12ABe5D8BD778BD5397F99cA900624CfADD4"
+      #      abi: ContractRegistryContract
+      #      startBlock: 6563025
+      #    mapping:
+      #      kind: ethereum/events
+      #      apiVersion: 0.0.7
+      #      language: wasm/assemblyscript
+      #      entities:
+      #        - AddressUpdate
+      #        - OwnerUpdate
+      #      abis:
+      #        - name: ContractRegistryContract
+      #          file: ./abis/ContractRegistryContract.json
+      #      eventHandlers:
+      #        - event: AddressUpdate(indexed bytes32,address)
+      #          handler: handleAddressUpdate
+      #        - event: OwnerUpdate(indexed address,indexed address)
+      #          handler: handleContractRegistryOwnerUpdate
+  #      file: ./src/mappings/contractRegistry.ts
+  - kind: ethereum/contract
+    name: ConverterRegistryContract1
+    network: mainnet
+    source:
+      address: "0x0ddff327ddf7fe838e3e63d02001ef23ad1ede8e"
+      abi: ConverterRegistryContract
+      startBlock: 7764526
+    mapping:
+      kind: ethereum/events
+      apiVersion: 0.0.7
+      language: wasm/assemblyscript
+      entities:
+        - TokenAddition
+        - TokenRemoval
+        - ConverterAddition
+        - ConverterRemoval
+        - OwnerUpdate
+      abis:
+        - name: ConverterRegistryContract
+          file: ./abis/ConverterRegistryContract.json
+        - name: ConverterContract
+          file: ./abis/ConverterContract.json
+        - name: ConverterContractOld
+          file: ./abis/ConverterContractOld.json
+        - name: SmartTokenContract
+          file: ./abis/SmartTokenContract.json
+        - name: SmartTokenContract
+          file: ./abis/SmartTokenContract.json
+        - name: ERC20Contract
+          file: ./abis/ERC20Contract.json
+        - name: ERC20SymbolBytes
+          file: ./abis/ERC20SymbolBytes.json
+        - name: ERC20NameBytes
+          file: ./abis/ERC20NameBytes.json
+      eventHandlers:
+        - event: TokenAddition(indexed address)
+          handler: handleTokenAddition
+        - event: TokenRemoval(indexed address)
+          handler: handleTokenRemoval
+        - event: ConverterAddition(indexed address,address)
+          handler: handleConverterAddition
+      #        - event: ConverterRemoval(indexed address,address)
+      #          handler: handleConverterRemoval
+      #        - event: OwnerUpdate(indexed address,indexed address)
+      #          handler: handleConverterRegistryOwnerUpdate
+      file: ./src/mappings/converterRegistry1.ts
+  - kind: ethereum/contract
+    name: ConverterRegistryContract2
+    network: mainnet
+    source:
+      address: "0xc1933ed6a18c175A7C2058807F25e55461Cd92F5"
+      abi: ConverterRegistryContract
+      startBlock: 8694969
+    mapping:
+      kind: ethereum/events
+      apiVersion: 0.0.7
+      language: wasm/assemblyscript
+      entities:
+        - TokenAddition
+        - TokenRemoval
+        - ConverterAddition
+        - ConverterRemoval
+        - OwnerUpdate
+      abis:
+        - name: ConverterRegistryContract
+          file: ./abis/ConverterRegistryContract.json
+        - name: ConverterContract
+          file: ./abis/ConverterContract.json
+        - name: ConverterContractOld
+          file: ./abis/ConverterContractOld.json
+        - name: SmartTokenContract
+          file: ./abis/SmartTokenContract.json
+        - name: ERC20Contract
+          file: ./abis/ERC20Contract.json
+        - name: ERC20SymbolBytes
+          file: ./abis/ERC20SymbolBytes.json
+        - name: ERC20NameBytes
+          file: ./abis/ERC20NameBytes.json
+      eventHandlers:
+        - event: TokenAddition(indexed address)
+          handler: handleTokenAddition
+        - event: TokenRemoval(indexed address)
+          handler: handleTokenRemoval
+        - event: ConverterAddition(indexed address,address)
+          handler: handleConverterAddition
+      #        - event: ConverterRemoval(indexed address,address)
+      #          handler: handleConverterRemoval
+      #        - event: OwnerUpdate(indexed address,indexed address)
+      #          handler: handleConverterRegistryOwnerUpdate
+      file: ./src/mappings/converterRegistry1.ts
+  - kind: ethereum/contract
+    name: ConverterRegistryContract3
+    network: mainnet
+    source:
+      address: "0x85e27A5718382F32238497e78b4A40DD778ab847"
+      abi: ConverterRegistryContract
+      startBlock: 9094899
+    mapping:
+      kind: ethereum/events
+      apiVersion: 0.0.7
+      language: wasm/assemblyscript
+      entities:
+        - SmartTokenAdded
+        - SmartTokenRemoved
+        - LiquidityPoolAdded
+        - LiquidityPoolRemoved
+        - ConvertibleTokenAdded
+        - ConvertibleTokenRemoved
+        - OwnerUpdate
+      abis:
+        - name: ConverterRegistryContract
+          file: ./abis/NewConverterRegistryContract.json
+        - name: ConverterContract
+          file: ./abis/ConverterContract.json
+        - name: ConverterContractOld
+          file: ./abis/ConverterContractOld.json
+        - name: SmartTokenContract
+          file: ./abis/SmartTokenContract.json
+        - name: ERC20Contract
+          file: ./abis/ERC20Contract.json
+        - name: ERC20SymbolBytes
+          file: ./abis/ERC20SymbolBytes.json
+        - name: ERC20NameBytes
+          file: ./abis/ERC20NameBytes.json
+      eventHandlers:
+        - event: SmartTokenAdded(indexed address)
+          handler: handleSmartTokenAdded
+        - event: SmartTokenRemoved(indexed address)
+          handler: handleSmartTokenRemoved
+        #        - event: LiquidityPoolAdded(indexed address)
+        #          handler: handleLiquidityPoolAdded
+        #        - event: LiquidityPoolRemoved(indexed address)
+        #          handler: handleLiquidityPoolRemoved
+        - event: ConvertibleTokenAdded(indexed address,indexed address)
+          handler: handleConvertibleTokenAdded
+      #        - event: ConvertibleTokenRemoved(indexed address,indexed address)
+      #          handler: handleConvertibleTokenRemoved
+      #        - event: OwnerUpdate(indexed address,indexed address)
+      #          handler: handleConverterRegistryOwnerUpdate
+      file: ./src/mappings/converterRegistry1.ts
+  - kind: ethereum/contract
+    name: ConverterRegistryContract4
+    network: mainnet
+    source:
+      address: "0xf6e2d7f616b67e46d708e4410746e9aab3a4c518"
+      abi: ConverterRegistryContract
+      startBlock: 9120931
+    mapping:
+      kind: ethereum/events
+      apiVersion: 0.0.7
+      language: wasm/assemblyscript
+      entities:
+        - SmartTokenAdded
+        - SmartTokenRemoved
+        - LiquidityPoolAdded
+        - LiquidityPoolRemoved
+        - ConvertibleTokenAdded
+        - ConvertibleTokenRemoved
+        - OwnerUpdate
+      abis:
+        - name: ConverterRegistryContract
+          file: ./abis/NewConverterRegistryContract.json
+        - name: ConverterContract
+          file: ./abis/ConverterContract.json
+        - name: ConverterContractOld
+          file: ./abis/ConverterContractOld.json
+        - name: SmartTokenContract
+          file: ./abis/SmartTokenContract.json
+        - name: ERC20Contract
+          file: ./abis/ERC20Contract.json
+        - name: ERC20SymbolBytes
+          file: ./abis/ERC20SymbolBytes.json
+        - name: ERC20NameBytes
+          file: ./abis/ERC20NameBytes.json
+      eventHandlers:
+        - event: SmartTokenAdded(indexed address)
+          handler: handleSmartTokenAdded
+        - event: SmartTokenRemoved(indexed address)
+          handler: handleSmartTokenRemoved
+        #        - event: LiquidityPoolAdded(indexed address)
+        #          handler: handleLiquidityPoolAdded
+        #        - event: LiquidityPoolRemoved(indexed address)
+        #          handler: handleLiquidityPoolRemoved
+        - event: ConvertibleTokenAdded(indexed address,indexed address)
+          handler: handleConvertibleTokenAdded
+        - event: ConvertibleTokenRemoved(indexed address,indexed address)
+          handler: handleConvertibleTokenRemoved
+      #        - event: OwnerUpdate(indexed address,indexed address)
+      #          handler: handleConverterRegistryOwnerUpdate
+      file: ./src/mappings/converterRegistry1.ts
+  - kind: ethereum/contract
+    name: ConverterRegistryContract5
+    network: mainnet
+    source:
+      address: "0xF84B332Db34C6A9b554D80cF9BC6124C1C74495D"
+      abi: ConverterRegistryContract
+      startBlock: 9656625
+    mapping:
+      kind: ethereum/events
+      apiVersion: 0.0.7
+      language: wasm/assemblyscript
+      entities:
+        - SmartTokenAdded
+        - SmartTokenRemoved
+        - LiquidityPoolAdded
+        - LiquidityPoolRemoved
+        - ConvertibleTokenAdded
+        - ConvertibleTokenRemoved
+        - OwnerUpdate
+      abis:
+        - name: ConverterRegistryContract
+          file: ./abis/NewConverterRegistryContract.json
+        - name: ConverterContract
+          file: ./abis/ConverterContract.json
+        - name: ConverterContractOld
+          file: ./abis/ConverterContractOld.json
+        - name: SmartTokenContract
+          file: ./abis/SmartTokenContract.json
+        - name: ERC20Contract
+          file: ./abis/ERC20Contract.json
+        - name: ERC20SymbolBytes
+          file: ./abis/ERC20SymbolBytes.json
+        - name: ERC20NameBytes
+          file: ./abis/ERC20NameBytes.json
+      eventHandlers:
+        - event: SmartTokenAdded(indexed address)
+          handler: handleSmartTokenAdded
+        - event: SmartTokenRemoved(indexed address)
+          handler: handleSmartTokenRemoved
+        #        - event: LiquidityPoolAdded(indexed address)
+        #          handler: handleLiquidityPoolAdded
+        #        - event: LiquidityPoolRemoved(indexed address)
+        #          handler: handleLiquidityPoolRemoved
+        - event: ConvertibleTokenAdded(indexed address,indexed address)
+          handler: handleConvertibleTokenAdded
+      #        - event: ConvertibleTokenRemoved(indexed address,indexed address)
+      #          handler: handleConvertibleTokenRemoved
+      #        - event: OwnerUpdate(indexed address,indexed address)
+      #          handler: handleConverterRegistryOwnerUpdate
+      file: ./src/mappings/converterRegistry1.ts
+  - kind: ethereum/contract
+    name: ConverterUpgraderContract
+    network: mainnet
+    source:
+      address: "0x20412bD6d146309c55cC607d30c5aAd07fbF6148"
+      abi: ConverterUpgraderContract
+      startBlock: 8914400
+    mapping:
+      kind: ethereum/events
+      apiVersion: 0.0.7
+      language: wasm/assemblyscript
+      entities:
+        - ConverterUpgrade
+      abis:
+        - name: ConverterUpgraderContract
+          file: ./abis/ConverterUpgraderContract.json
+        - name: ConverterContract
+          file: ./abis/ConverterContract.json
+        - name: ERC20Contract
+          file: ./abis/ERC20Contract.json
+        - name: ERC20SymbolBytes
+          file: ./abis/ERC20SymbolBytes.json
+        - name: ERC20NameBytes
+          file: ./abis/ERC20NameBytes.json
+      eventHandlers:
+        - event: ConverterUpgrade(indexed address,indexed address)
+          handler: handleConverterUpgrade
+      callHandlers:
+        - function: upgradeOld(address,bytes32)
+          handler: handleUpgradeOld
+      file: ./src/mappings/converterUpgrader.ts
+templates:
+  - kind: ethereum/contract
+    name: ConverterContract
+    network: mainnet
+    source:
+      abi: ConverterContract
+    mapping:
+      kind: ethereum/events
+      apiVersion: 0.0.7
+      language: wasm/assemblyscript
+      entities:
+        - Conversion
+        - PriceDataUpdate
+        - ConversionFeeUpdate
+        - ManagerUpdate
+        - OwnerUpdate
+      abis:
+        - name: ConverterContract
+          file: ./abis/ConverterContract.json
+        - name: ConverterContractOld
+          file: ./abis/ConverterContractOld.json
+        - name: ERC20Contract
+          file: ./abis/ERC20Contract.json
+        - name: ERC20SymbolBytes
+          file: ./abis/ERC20SymbolBytes.json
+        - name: ERC20NameBytes
+          file: ./abis/ERC20NameBytes.json
+      eventHandlers:
+        - event: Conversion(indexed address,indexed address,indexed address,uint256,uint256,int256)
+          handler: handleConversion
+      #        - event: PriceDataUpdate(indexed address,uint256,uint256,uint32)
+      #          handler: handlePriceDataUpdate
+      #        - event: ConversionFeeUpdate(uint32,uint32)
+      #          handler: handleConversionFeeUpdate
+      #        - event: ManagerUpdate(indexed address,indexed address)
+      #          handler: handleManagerUpdate
+      #        - event: OwnerUpdate(indexed address,indexed address)
+      #          handler: handleConverterOwnerUpdate
+      #        - event: VirtualBalancesEnable(bool)
+      #          handler: handleVirtualBalancesEnable
+      #      callHandlers:
+      #        - function: upgrade()
+      #          handler: handleUpgrade
+      file: ./src/mappings/converter.ts
+  - kind: ethereum/contract
+    name: SmartTokenContract
+    network: mainnet
+    source:
+      abi: SmartTokenContract
+    mapping:
+      kind: ethereum/events
+      apiVersion: 0.0.7
+      language: wasm/assemblyscript
+      entities:
+        - NewSmartToken
+        - Issuance
+        - Destruction
+        - Transfer
+        - Approval
+        - OwnerUpdate
+      abis:
+        - name: SmartTokenContract
+          file: ./abis/SmartTokenContract.json
+        - name: ConverterContract
+          file: ./abis/ConverterContract.json
+        - name: ERC20Contract
+          file: ./abis/ERC20Contract.json
+        - name: ERC20SymbolBytes
+          file: ./abis/ERC20SymbolBytes.json
+        - name: ERC20NameBytes
+          file: ./abis/ERC20NameBytes.json
+      #      eventHandlers:
+      #        - event: NewSmartToken(address)
+      #          handler: handleNewSmartToken
+      #        - event: Issuance(uint256)
+      #          handler: handleIssuance
+      #        - event: Destruction(uint256)
+      #          handler: handleDestruction
+      #        - event: Transfer(indexed address,indexed address,uint256)
+      #          handler: handleTransfer
+      #        - event: Approval(indexed address,indexed address,uint256)
+      #          handler: handleApproval
+      #        - event: OwnerUpdate(address,address)
+      #          handler: handleSmartTokenOwnerUpdate
+      file: ./src/mappings/smartToken.ts
