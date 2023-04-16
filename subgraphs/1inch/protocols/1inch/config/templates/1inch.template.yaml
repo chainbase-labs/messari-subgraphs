@@ -1,0 +1,73 @@
+specVersion: 0.0.3
+description: Liquidity Pool Balances For 1inch
+repository:
+schema:
+  file: schema.graphql
+dataSources:
+  - kind: ethereum/contract
+    name: MooniswapFactoryV11
+    network: mainnet
+    source:
+      address: "0xbaf9a5d4b0052359326a6cdab54babaa3a3a9643"
+      abi: MooniswapFactoryV11
+      startBlock: 11607841
+    mapping:
+      kind: ethereum/events
+      apiVersion: 0.0.7
+      language: wasm/assemblyscript
+      file: ./src/mapping.ts
+      entities:
+        - Pool
+      abis:
+        - name: MooniswapFactoryV11
+          file: ./abis/MooniswapFactoryV11.json
+        - name: Erc20
+          file: ./abis/ERC20.json
+      eventHandlers:
+        - event: Deployed(indexed address,indexed address,indexed address)
+          handler: handleNewPoolV11
+  - kind: ethereum/contract
+    name: MooniswapFactory
+    network: mainnet
+    source:
+      address: "0xC4A8B7e29E3C8ec560cd4945c1cF3461a85a148d"
+      abi: MooniswapFactory
+      startBlock: 11517708
+    mapping:
+      kind: ethereum/events
+      apiVersion: 0.0.7
+      language: wasm/assemblyscript
+      file: ./src/mapping.ts
+      entities:
+        - Pool
+      abis:
+        - name: MooniswapFactory
+          file: ./abis/MooniswapFactory.json
+        - name: Erc20
+          file: ./abis/ERC20.json
+      eventHandlers:
+        - event: Deployed(indexed address,indexed address,indexed address)
+          handler: handleNewPool
+templates:
+  - kind: ethereum/contract
+    name: Pool
+    network: mainnet
+    source:
+      abi: PoolAbi
+    mapping:
+      kind: ethereum/events
+      apiVersion: 0.0.7
+      language: wasm/assemblyscript
+      file: ./src/mapping.ts
+      entities:
+        - Pool
+      abis:
+        - name: Erc20
+          file: ./abis/ERC20.json
+        - name: PoolAbi
+          file: ./abis/PoolAbi.json
+        - name: Multicall
+          file: ./abis/MultiCall.json
+      eventHandlers:
+        - event: Transfer(indexed address,indexed address,uint256)
+          handler: handleTransfer
