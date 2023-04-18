@@ -26,7 +26,7 @@ export function handleConversion(event: Conversion): void {
     .concat(event.logIndex.toString());
 
   const fromToken = getOrCreateToken(event.params._fromToken) as Token;
-  const toToken = Token.load(event.params._toToken.toHexString()) as Token;
+  const toToken = getOrCreateToken(event.params._toToken) as Token;
 
   const fromAmount = convertToExp18(event.params._amount, fromToken.decimals);
   const toAmount = convertToExp18(event.params._return, toToken.decimals);
