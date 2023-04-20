@@ -21,7 +21,6 @@ import {
 } from "../../../../src/common/constant";
 import {
   calculateLpFee,
-  convertToExp18,
   getOrCreateLpToken,
   getPMMState,
   ONE_BI,
@@ -47,11 +46,8 @@ export function handleDODOSwap(event: DODOSwap): void {
   const fromToken = Token.load(event.params.fromToken.toHexString()) as Token;
   const toToken = Token.load(event.params.toToken.toHexString()) as Token;
 
-  const fromAmount = convertToExp18(
-    event.params.fromAmount,
-    fromToken.decimals
-  );
-  const toAmount = convertToExp18(event.params.toAmount, toToken.decimals);
+  const fromAmount = event.params.fromAmount;
+  const toAmount = event.params.toAmount;
 
   let baseToken: Token,
     quoteToken: Token,
@@ -63,24 +59,24 @@ export function handleDODOSwap(event: DODOSwap): void {
     log.info("in", []);
     baseToken = fromToken as Token;
     quoteToken = toToken as Token;
-    baseVolume = fromAmount;
-    quoteVolume = toAmount;
+    baseVolume = fromAmount.toBigDecimal();
+    quoteVolume = toAmount.toBigDecimal();
 
     baseLpFee = ZERO_BD;
     quoteLpFee = calculateLpFee(quoteVolume, pair._lpFeeRate);
   } else {
     baseToken = toToken as Token;
     quoteToken = fromToken as Token;
-    baseVolume = toAmount;
-    quoteVolume = fromAmount;
+    baseVolume = toAmount.toBigDecimal();
+    quoteVolume = fromAmount.toBigDecimal();
 
     baseLpFee = calculateLpFee(baseVolume, pair._lpFeeRate);
     quoteLpFee = ZERO_BD;
   }
   pair._i = pmmState.i;
   pair._k = pmmState.K;
-  const baseTokenBalance = convertToExp18(pmmState.B, baseToken.decimals);
-  const quoteTokenBalance = convertToExp18(pmmState.Q, quoteToken.decimals);
+  const baseTokenBalance = pmmState.B;
+  const quoteTokenBalance = pmmState.Q;
   pair.inputTokenBalances = [
     BigInt.fromString(baseTokenBalance.toString()),
     BigInt.fromString(quoteTokenBalance.toString()),
@@ -120,10 +116,12 @@ export function handleDODOSwap(event: DODOSwap): void {
   }
   if (SMART_ROUTE_ADDRESSES.indexOf(event.params.trader.toHexString()) == -1) {
     fromToken._txCount = fromToken._txCount.plus(ONE_BI);
-    fromToken._tradeVolume = fromToken._tradeVolume.plus(fromAmount);
+    fromToken._tradeVolume = fromToken._tradeVolume.plus(
+      fromAmount.toBigDecimal()
+    );
 
     toToken._txCount = toToken._txCount.plus(ONE_BI);
-    toToken._tradeVolume = toToken._tradeVolume.plus(toAmount);
+    toToken._tradeVolume = toToken._tradeVolume.plus(toAmount.toBigDecimal());
   }
   //save
   pair.save();
@@ -150,18 +148,11 @@ export function handleBuyShares(event: BuyShares): void {
     event.block.timestamp
   );
 
-  const baseAmount = convertToExp18(pmmState.B, baseToken.decimals).minus(
-    pair.inputTokenBalances[0].toBigDecimal()
-  );
-  const quoteAmount = convertToExp18(pmmState.Q, quoteToken.decimals).minus(
-    pair.inputTokenBalances[1].toBigDecimal()
-  );
+  const baseAmount = pmmState.B.minus(pair.inputTokenBalances[0]);
+  const quoteAmount = pmmState.Q.minus(pair.inputTokenBalances[1]);
 
-  const lpAmount = convertToExp18(
-    event.params.increaseShares,
-    lpToken.decimals
-  );
-  const balance = convertToExp18(event.params.totalShares, lpToken.decimals);
+  const lpAmount = event.params.increaseShares;
+  const balance = event.params.totalShares;
 
   const logIndexI32 = event.logIndex.toI32();
   const transactionHash = event.transaction.hash.toHexString();
@@ -193,12 +184,8 @@ export function handleBuyShares(event: BuyShares): void {
   deposit.outputTokenAmount = BigInt.fromString(lpAmount.toString());
   deposit.pool = pair.id;
   deposit.amountUSD = ZERO_BD;
-  const baseTokenBalance = BigInt.fromString(
-    convertToExp18(pmmState.B, baseToken.decimals).toString()
-  );
-  const quoteTokenBalance = BigInt.fromString(
-    convertToExp18(pmmState.Q, quoteToken.decimals).toString()
-  );
+  const baseTokenBalance = pmmState.B;
+  const quoteTokenBalance = pmmState.Q;
   pair.inputTokenBalances = [baseTokenBalance, quoteTokenBalance];
   pair._i = pmmState.i;
   pair._k = pmmState.K;
@@ -222,12 +209,8 @@ export function handleSellShares(event: SellShares): void {
   const baseToken = Token.load(pair.inputTokens[0]) as Token;
   const quoteToken = Token.load(pair.inputTokens[1]) as Token;
 
-  const baseAmount = pair.inputTokenBalances[0]
-    .toBigDecimal()
-    .minus(convertToExp18(pmmState.B, baseToken.decimals));
-  const quoteAmount = pair.inputTokenBalances[1]
-    .toBigDecimal()
-    .minus(convertToExp18(pmmState.Q, quoteToken.decimals));
+  const baseAmount = pair.inputTokenBalances[0].minus(pmmState.B);
+  const quoteAmount = pair.inputTokenBalances[1].minus(pmmState.Q);
 
   const lpToken = getOrCreateLpToken(
     event.address,
@@ -235,11 +218,8 @@ export function handleSellShares(event: SellShares): void {
     event.block.timestamp
   );
 
-  const lpAmount = convertToExp18(
-    event.params.decreaseShares,
-    lpToken.decimals
-  );
-  const balance = convertToExp18(event.params.totalShares, lpToken.decimals);
+  const lpAmount = event.params.decreaseShares;
+  const balance = event.params.totalShares;
 
   const logIndexI32 = event.logIndex.toI32();
   const transactionHash = event.transaction.hash.toHexString();
@@ -271,12 +251,9 @@ export function handleSellShares(event: SellShares): void {
   withdraw.amountUSD = ZERO_BD;
   withdraw.outputTokenAmount = BigInt.fromString(lpAmount.toString());
   withdraw.pool = pair.id;
-  const baseTokenBalance = BigInt.fromString(
-    convertToExp18(pmmState.B, baseToken.decimals).toString()
-  );
-  const quoteTokenBalance = BigInt.fromString(
-    convertToExp18(pmmState.Q, quoteToken.decimals).toString()
-  );
+  const baseTokenBalance = pmmState.B;
+  const quoteTokenBalance = pmmState.Q;
+
   pair.inputTokenBalances = [baseTokenBalance, quoteTokenBalance];
 
   pair._i = pmmState.i;
@@ -296,21 +273,15 @@ export function handleLpFeeRateChange(event: LpFeeRateChange): void {
   }
   if (pair.name == TYPE_DPP_POOL) {
     const dpp = DPP.bind(event.address);
-    pair._lpFeeRate = convertToExp18(dpp._LP_FEE_RATE_(), 18);
+    pair._lpFeeRate = dpp._LP_FEE_RATE_().toBigDecimal();
 
     const pmmState = getPMMState(event.address);
     if (!pmmState) {
       return;
     }
-    const baseToken = Token.load(pair.inputTokens[0]) as Token;
-    const quoteToken = Token.load(pair.inputTokens[1]) as Token;
 
-    const baseTokenBalance = BigInt.fromString(
-      convertToExp18(pmmState.B, baseToken.decimals).toString()
-    );
-    const quoteTokenBalance = BigInt.fromString(
-      convertToExp18(pmmState.Q, quoteToken.decimals).toString()
-    );
+    const baseTokenBalance = pmmState.B;
+    const quoteTokenBalance = pmmState.Q;
     pair.inputTokenBalances = [baseTokenBalance, quoteTokenBalance];
     pair._i = pmmState.i;
     pair._k = pmmState.K;

@@ -55,15 +55,6 @@ export function exponentToBigDecimal(decimals: i32): BigDecimal {
   return scale;
 }
 
-export function convertToExp18(
-  amount: BigInt,
-  exchangeDecimals: i32
-): BigDecimal {
-  return convertTokenToDecimal(amount, exchangeDecimals).times(
-    exponentToBigDecimal(18)
-  );
-}
-
 export function bigDecimalExp18(): BigDecimal {
   return BigDecimal.fromString("1000000000000000000");
 }
@@ -382,9 +373,7 @@ export function getOrCreateToken(
     }
     let decimal = fetchTokenDecimals(address);
     token.decimals = decimal;
-    token._totalSupply = BigInt.fromString(
-      convertToExp18(fetchTokenTotalSupply(address), decimal).toString()
-    );
+    token._totalSupply = fetchTokenTotalSupply(address);
     token._tradeVolume = ZERO_BD;
     token._totalLiquidityOnDODO = ZERO_BD;
     token.lastPriceUSD = ZERO_BD;
@@ -408,9 +397,7 @@ export function getOrCreateToken(
     token.name = fetchTokenName(address);
     let decimal = fetchTokenDecimals(address);
     token.decimals = decimal;
-    token._totalSupply = BigInt.fromString(
-      convertToExp18(fetchTokenTotalSupply(address), decimal).toString()
-    );
+    token._totalSupply = fetchTokenTotalSupply(address);
     token.save();
   }
 
@@ -442,9 +429,7 @@ export function getOrCreateLpToken(
     lpToken.symbol = fetchTokenSymbol(address);
     let decimal = fetchTokenDecimals(address);
     lpToken.decimals = decimal;
-    lpToken._totalSupply = BigInt.fromString(
-      convertToExp18(fetchTokenTotalSupply(address), decimal).toString()
-    );
+    lpToken._totalSupply = fetchTokenTotalSupply(address);
     lpToken.name = fetchTokenName(address);
   }
   lpToken._tradeVolume = ZERO_BD;

@@ -1,5 +1,5 @@
 import { BigInt, store } from "@graphprotocol/graph-ts";
-import { convertToExp18, createLiquidityPool, ZERO_BD } from "./helpers";
+import { createLiquidityPool, ZERO_BD } from "./helpers";
 import { NewDPP, RemoveDPP } from "../../../../generated/DPPFactory/DPPFactory";
 import { NewDVM, RemoveDVM } from "../../../../generated/DVMFactory/DVMFactory";
 import { NewDSP, RemoveDSP } from "../../../../generated/DSPFactory/DSPFactory";
@@ -22,7 +22,6 @@ import {
 import {
   DexAmmProtocol,
   LiquidityPool as LiquidityPoolEntity,
-  Token,
 } from "../../../../generated/schema";
 
 export function handleNewDVM(event: NewDVM): void {
@@ -51,26 +50,14 @@ export function handleNewDVM(event: NewDVM): void {
     if (pmmState.reverted == false) {
       pair._i = pmmState.value.i;
       pair._k = pmmState.value.K;
-      const baseToken = Token.load(
-        event.params.baseToken.toHexString()
-      ) as Token;
-      const quoteToken = Token.load(
-        event.params.quoteToken.toHexString()
-      ) as Token;
 
-      const baseTokenBalance = convertToExp18(
-        pmmState.value.B,
-        baseToken.decimals
-      );
-      const quoteTokenBalance = convertToExp18(
-        pmmState.value.Q,
-        quoteToken.decimals
-      );
+      const baseTokenBalance = pmmState.value.B;
+      const quoteTokenBalance = pmmState.value.Q;
       pair.inputTokenBalances = [
         BigInt.fromString(baseTokenBalance.toString()),
         BigInt.fromString(quoteTokenBalance.toString()),
       ];
-      pair._lpFeeRate = convertToExp18(dvm._LP_FEE_RATE_(), 18);
+      pair._lpFeeRate = dvm._LP_FEE_RATE_().toBigDecimal();
       pair._mtFeeRateModel = dvm._MT_FEE_RATE_MODEL_();
       pair._maintainer = dvm._MAINTAINER_();
     }
@@ -103,25 +90,14 @@ export function handleNewDPP(event: NewDPP): void {
     if (pmmState.reverted == false) {
       pair._i = pmmState.value.i;
       pair._k = pmmState.value.K;
-      const baseToken = Token.load(
-        event.params.baseToken.toHexString()
-      ) as Token;
-      const quoteToken = Token.load(
-        event.params.quoteToken.toHexString()
-      ) as Token;
-      const baseTokenBalance = convertToExp18(
-        pmmState.value.B,
-        baseToken.decimals
-      );
-      const quoteTokenBalance = convertToExp18(
-        pmmState.value.Q,
-        quoteToken.decimals
-      );
+
+      const baseTokenBalance = pmmState.value.B;
+      const quoteTokenBalance = pmmState.value.Q;
       pair.inputTokenBalances = [
         BigInt.fromString(baseTokenBalance.toString()),
         BigInt.fromString(quoteTokenBalance.toString()),
       ];
-      pair._lpFeeRate = convertToExp18(dpp._LP_FEE_RATE_(), 18);
+      pair._lpFeeRate = dpp._LP_FEE_RATE_().toBigDecimal();
       pair._mtFeeRateModel = dpp._MT_FEE_RATE_MODEL_();
       pair._maintainer = dpp._MAINTAINER_();
     }
@@ -156,25 +132,13 @@ export function handleNewDSP(event: NewDSP): void {
     if (pmmState.reverted == false) {
       pair._i = pmmState.value.i;
       pair._k = pmmState.value.K;
-      const baseToken = Token.load(
-        event.params.baseToken.toHexString()
-      ) as Token;
-      const quoteToken = Token.load(
-        event.params.quoteToken.toHexString()
-      ) as Token;
-      const baseTokenBalance = convertToExp18(
-        pmmState.value.B,
-        baseToken.decimals
-      );
-      const quoteTokenBalance = convertToExp18(
-        pmmState.value.Q,
-        quoteToken.decimals
-      );
+      const baseTokenBalance = pmmState.value.B;
+      const quoteTokenBalance = pmmState.value.Q;
       pair.inputTokenBalances = [
         BigInt.fromString(baseTokenBalance.toString()),
         BigInt.fromString(quoteTokenBalance.toString()),
       ];
-      pair._lpFeeRate = convertToExp18(dsp._LP_FEE_RATE_(), 18);
+      pair._lpFeeRate = dsp._LP_FEE_RATE_().toBigDecimal();
       pair._mtFeeRateModel = dsp._MT_FEE_RATE_MODEL_();
       pair._maintainer = dsp._MAINTAINER_();
     }

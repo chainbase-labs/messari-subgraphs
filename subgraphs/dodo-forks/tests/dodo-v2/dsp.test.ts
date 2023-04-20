@@ -138,7 +138,7 @@ describe("dsp", () => {
       "LiquidityPool",
       dvm,
       "inputTokenBalances",
-      "[1000000000000, 50186989139189661]"
+      "[1, 50186989139189661]"
     );
 
     assert.fieldEquals("LiquidityPool", dvm, "_creator", creator);
