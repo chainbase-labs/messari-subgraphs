@@ -22,3 +22,5 @@ export namespace ProtocolType {
   export const BRIDGE = "BRIDGE";
   export const GENERIC = "GENERIC";
 }
+
+export const ETH_RESERVE_ADDRESS = "0xeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeee";

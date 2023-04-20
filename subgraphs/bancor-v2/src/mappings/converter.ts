@@ -1,19 +1,21 @@
-import { Address, BigInt } from "@graphprotocol/graph-ts";
+import { Address, BigInt, log } from "@graphprotocol/graph-ts";
 import {
   Conversion,
   ConversionFeeUpdate,
-  ConverterContract,
-  ManagerUpdate,
-  OwnerUpdate as ConverterOwnerUpdate,
-  PriceDataUpdate,
-  UpgradeCall,
-  VirtualBalancesEnable,
-} from "../../generated/templates/ConverterContract/ConverterContract";
-import { LiquidityPool, Swap, Token } from "../../generated/schema";
+  LiquidityAdded,
+  LiquidityRemoved,
+} from "../../generated/templates/Converter/ConverterBase";
+import {
+  Deposit,
+  LiquidityPool,
+  Swap,
+  Token,
+  Withdraw,
+} from "../../generated/schema";
 import {
   convertToExp18,
-  fetchConverterConnectorTokens,
   fetchTokenBalance,
+  getOrCreateLiquidityPool,
   getOrCreateToken,
   ZERO_BD,
 } from "./helper";
@@ -31,10 +33,26 @@ export function handleConversion(event: Conversion): void {
   const fromAmount = convertToExp18(event.params._amount, fromToken.decimals);
   const toAmount = convertToExp18(event.params._return, toToken.decimals);
 
-  const pair = LiquidityPool.load(event.address.toHexString()) as LiquidityPool;
+  const poolAddress = event.address;
+  let pair = LiquidityPool.load(poolAddress.toHexString());
   if (!pair) {
-    return;
+    log.warning(
+      "When Swap, Pool not exist in store,pool: {}, blockNumber: {}, txHash: {}, logIndex: {}",
+      [
+        poolAddress.toHexString(),
+        event.block.number.toString(),
+        event.transaction.hash.toHexString(),
+        event.logIndex.toString(),
+      ]
+    );
   }
+  pair = getOrCreateLiquidityPool(
+    Address.zero().toHexString(),
+    poolAddress,
+    event.block.timestamp,
+    event.block.number
+  );
+
   const tokens = pair.inputTokens;
   const fromIndex = tokens.indexOf(fromToken.id);
   const toIndex = tokens.indexOf(toToken.id);
@@ -86,8 +104,8 @@ export function handleConversion(event: Conversion): void {
     swap.blockNumber = event.block.number;
     swap.amountInUSD = ZERO_BD;
     swap.amountOutUSD = ZERO_BD;
+    swap._isBancorNetwork = false;
   }
-
   //save
   pair.save();
   swap.save();
@@ -95,64 +113,150 @@ export function handleConversion(event: Conversion): void {
   toToken.save();
 }
 
-export function handlePriceDataUpdate(event: PriceDataUpdate): void {
-  const pool = LiquidityPool.load(event.address.toHexString()) as LiquidityPool;
-  if (!pool) {
-    return;
-  }
-  pool._weight = event.params._connectorWeight;
-  const tokenAddress = event.params._connectorToken;
-  const token = getOrCreateToken(tokenAddress) as Token;
-  const index = pool.inputTokens.indexOf(tokenAddress.toHexString());
-  pool.inputTokenBalances[index] = BigInt.fromString(
-    convertToExp18(event.params._connectorBalance, token.decimals).toString()
-  );
-
-  const converterContract = ConverterContract.bind(Address.fromString(pool.id));
-  const smartTokenAddress = converterContract.token();
-  const smartToken = getOrCreateToken(smartTokenAddress) as Token;
-  pool.outputTokenSupply = BigInt.fromString(
-    convertToExp18(event.params._tokenSupply, smartToken.decimals).toString()
-  );
-
-  pool.save();
-}
-
 export function handleConversionFeeUpdate(event: ConversionFeeUpdate): void {
   const pool = LiquidityPool.load(event.address.toHexString()) as LiquidityPool;
   if (!pool) {
     return;
   }
-  pool._conversionFee = event.params._newFee;
+  // pool.fees[] = event.params._newFee;
+  // pool.save();
+}
+
+export function handleLiquidityAdded(event: LiquidityAdded): void {
+  const poolAddress = event.address;
+  let pool = LiquidityPool.load(poolAddress.toHexString());
+  if (!pool) {
+    log.warning(
+      "When Deposit, Pool not exist in store,pool: {}, blockNumber: {}, txHash: {}, logIndex: {}",
+      [
+        poolAddress.toHexString(),
+        event.block.number.toString(),
+        event.transaction.hash.toHexString(),
+        event.logIndex.toString(),
+      ]
+    );
+  }
+  pool = getOrCreateLiquidityPool(
+    Address.zero().toHexString(),
+    poolAddress,
+    event.block.timestamp,
+    event.block.number
+  );
+  const tokenAddress = event.params._reserveToken;
+  const token = getOrCreateToken(tokenAddress) as Token;
+
+  const amount = convertToExp18(event.params._amount, token.decimals);
+
+  const logIndexI32 = event.logIndex.toI32();
+  const transactionHash = event.transaction.hash.toHexString();
+  const depositId = transactionHash
+    .concat("-")
+    .concat(event.logIndex.toString());
+  let deposit = Deposit.load(depositId);
+  let tokens: Array<string> = [];
+  let amounts: Array<BigInt> = [];
+  if (!deposit) {
+    deposit = new Deposit(depositId);
+    deposit.hash = transactionHash;
+    deposit.logIndex = logIndexI32;
+    deposit.protocol = pool.protocol;
+    deposit.blockNumber = event.block.number;
+    deposit.timestamp = event.block.timestamp;
+    deposit.to = pool.id;
+    deposit.from = event.params._provider.toHexString();
+    deposit.outputToken = pool.outputToken;
+    deposit.outputTokenAmount = event.params._newSupply;
+    pool.outputTokenSupply = pool.outputTokenSupply!.plus(
+      event.params._newSupply
+    );
+    deposit.amountUSD = ZERO_BD;
+    deposit.pool = pool.id;
+  } else {
+    tokens = deposit.inputTokens;
+    amounts = deposit.inputTokenAmounts;
+  }
+  tokens.push(token.id);
+  amounts.push(BigInt.fromString(amount.toString()));
+  deposit.inputTokens = tokens;
+  deposit.inputTokenAmounts = amounts;
+
+  const idx = pool.inputTokens.indexOf(token.id);
+  const balances = pool.inputTokenBalances;
+  balances[idx] = BigInt.fromString(
+    convertToExp18(event.params._newBalance, token.decimals).toString()
+  );
+  pool.inputTokenBalances = balances;
+
+  deposit.save();
   pool.save();
 }
 
-export function handleManagerUpdate(event: ManagerUpdate): void {
-  const pool = LiquidityPool.load(event.address.toHexString()) as LiquidityPool;
+export function handleLiquidityRemoved(event: LiquidityRemoved): void {
+  const poolAddress = event.address;
+  let pool = LiquidityPool.load(poolAddress.toHexString());
   if (!pool) {
-    return;
+    log.warning(
+      "When Withdraw, Pool not exist in store,pool: {}, blockNumber: {}, txHash: {}, logIndex: {}",
+      [
+        poolAddress.toHexString(),
+        event.block.number.toString(),
+        event.transaction.hash.toHexString(),
+        event.logIndex.toString(),
+      ]
+    );
   }
-  pool._manager = event.params._newManager.toHexString();
+  pool = getOrCreateLiquidityPool(
+    Address.zero().toHexString(),
+    poolAddress,
+    event.block.timestamp,
+    event.block.number
+  );
+
+  const tokenAddress = event.params._reserveToken;
+  const token = getOrCreateToken(tokenAddress) as Token;
+
+  const amount = convertToExp18(event.params._amount, token.decimals);
+
+  const logIndexI32 = event.logIndex.toI32();
+  const transactionHash = event.transaction.hash.toHexString();
+  const withdrawalId = transactionHash
+    .concat("-")
+    .concat(event.logIndex.toString());
+  let withdrawal = Withdraw.load(withdrawalId);
+  let tokens: Array<string> = [];
+  let amounts: Array<BigInt> = [];
+  if (!withdrawal) {
+    withdrawal = new Withdraw(withdrawalId);
+    withdrawal.hash = transactionHash;
+    withdrawal.logIndex = logIndexI32;
+    withdrawal.protocol = pool.protocol;
+    withdrawal.blockNumber = event.block.number;
+    withdrawal.timestamp = event.block.timestamp;
+    withdrawal.from = pool.id;
+    withdrawal.to = event.params._provider.toHexString();
+    withdrawal.outputToken = pool.outputToken;
+    withdrawal.outputTokenAmount = event.params._newSupply;
+    pool.outputTokenSupply = pool.outputTokenSupply!.minus(
+      event.params._newSupply
+    );
+    withdrawal.amountUSD = ZERO_BD;
+    withdrawal.pool = pool.id;
+  } else {
+    tokens = withdrawal.inputTokens;
+    amounts = withdrawal.inputTokenAmounts;
+  }
+  tokens.push(token.id);
+  amounts.push(BigInt.fromString(amount.toString()));
+  withdrawal.inputTokens = tokens;
+  withdrawal.inputTokenAmounts = amounts;
+
+  const idx = pool.inputTokens.indexOf(token.id);
+  const balances = pool.inputTokenBalances;
+  balances[idx] = BigInt.fromString(
+    convertToExp18(event.params._newBalance, token.decimals).toString()
+  );
+  pool.inputTokenBalances = balances;
+
+  withdrawal.save();
   pool.save();
-}
-
-export function handleConverterOwnerUpdate(event: ConverterOwnerUpdate): void {
-  const pool = LiquidityPool.load(event.address.toHexString()) as LiquidityPool;
-  if (!pool) {
-    return;
-  }
-  pool._owner = event.params._newOwner.toHexString();
-  pool.save();
-}
-
-export function handleUpgrade(call: UpgradeCall): void {}
-
-export function handleVirtualBalancesEnable(
-  event: VirtualBalancesEnable
-): void {
-  const pool = LiquidityPool.load(event.address.toHexString()) as LiquidityPool;
-  if (!pool) {
-    return;
-  }
-  fetchConverterConnectorTokens(Address.fromString(pool.id));
 }

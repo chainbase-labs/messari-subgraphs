@@ -1,22 +1,18 @@
 import { Address, BigDecimal, BigInt } from "@graphprotocol/graph-ts";
 import {
-  _Connector,
   DexAmmProtocol,
   LiquidityPool,
+  LiquidityPoolFee,
   Token,
 } from "../../generated/schema";
-import {
-  ConverterContract as ConverterTemplate,
-  SmartTokenContract as SmartTokenTemplate,
-} from "../../generated/templates";
-import { ConverterContract } from "../../generated/ConverterRegistryContract1/ConverterContract";
-import { ERC20Contract } from "../../generated/templates/ConverterContract/ERC20Contract";
-import { ERC20SymbolBytes } from "../../generated/ConverterRegistryContract1/ERC20SymbolBytes";
-import { ERC20NameBytes } from "../../generated/ConverterRegistryContract1/ERC20NameBytes";
+import { ERC20Contract } from "../../generated/templates/Converter/ERC20Contract";
+import { ERC20SymbolBytes } from "../../generated/templates/Converter/ERC20SymbolBytes";
+import { ERC20NameBytes } from "../../generated//templates/Converter/ERC20NameBytes";
 import { Versions } from "../versions";
-import { Network, ProtocolType } from "../constant";
-import { SmartTokenContract } from "../../generated/ConverterRegistryContract1/SmartTokenContract";
-import { ConverterContractOld } from "../../generated/ConverterRegistryContract1/ConverterContractOld";
+import { ETH_RESERVE_ADDRESS, Network, ProtocolType } from "../constant";
+import { SmartToken1 as SmartTokenContract } from "../../generated/ConverterRegistry1/SmartToken1";
+import { ConverterBase } from "../../generated/ConverterRegistry1/ConverterBase";
+import { Converter as ConverterTemplate } from "../../generated/templates";
 
 export const ZERO_BI = BigInt.fromI32(0);
 export const ONE_BI = BigInt.fromI32(1);
@@ -155,7 +151,7 @@ export function fetchTokenTotalSupply(tokenAddress: Address): BigInt {
 export function fetchTokenDecimals(tokenAddress: Address): i32 {
   const contract = ERC20Contract.bind(tokenAddress);
   // try types uint8 for decimals
-  let decimalValue = null;
+  let decimalValue = 18;
   const decimalResult = contract.try_decimals();
   if (!decimalResult.reverted) {
     decimalValue = decimalResult.value;
@@ -167,6 +163,15 @@ export function fetchTokenBalance(
   tokenAddress: Address,
   user: Address
 ): BigInt {
+  if (tokenAddress.equals(Address.fromString(ETH_RESERVE_ADDRESS))) {
+    const converterContract = ConverterBase.bind(user);
+    let balanceResult = converterContract.try_reserveBalance(tokenAddress);
+    if (balanceResult.reverted) {
+      balanceResult = converterContract.try_getConnectorBalance(tokenAddress);
+    }
+    return balanceResult.value;
+  }
+
   const contract = ERC20Contract.bind(tokenAddress);
   const balanceResult = contract.try_balanceOf(user);
   if (balanceResult.reverted) {
@@ -176,90 +181,42 @@ export function fetchTokenBalance(
   return balanceResult.value;
 }
 
-export function fetchConnector(
-  poolAddress: Address,
-  tokenAddress: Address
-): void {
-  const converterContract = ConverterContract.bind(poolAddress);
-
-  const converterConnectorsResult =
-    converterContract.try_connectors(tokenAddress);
-  if (!converterConnectorsResult.reverted) {
-    const connectorID =
-      poolAddress.toHexString() + "-" + tokenAddress.toHexString();
-    let connector = _Connector.load(connectorID);
-    if (!connector) {
-      connector = new _Connector(connectorID);
-    }
-    connector._virtualBalance = converterConnectorsResult.value.value0;
-    connector._weight = converterConnectorsResult.value.value1;
-    connector._isVirtualBalanceEnabled = converterConnectorsResult.value.value2;
-    connector._isPurchaseEnabled = converterConnectorsResult.value.value3;
-    connector._isSet = converterConnectorsResult.value.value4;
-    connector._converter = poolAddress.toHexString();
-    connector._connectorToken = tokenAddress.toHexString();
-    connector.save();
-  } else {
-    const converterContractOld = ConverterContractOld.bind(poolAddress);
-    const converterConnectorsResult =
-      converterContractOld.try_connectors(tokenAddress);
-    if (!converterConnectorsResult.reverted) {
-      const connectorID =
-        poolAddress.toHexString() + "-" + tokenAddress.toHexString();
-      let connector = _Connector.load(connectorID);
-      if (!connector) {
-        connector = new _Connector(connectorID);
-      }
-      connector._virtualBalance = converterConnectorsResult.value.value0;
-      connector._weight = converterConnectorsResult.value.value1;
-      connector._isVirtualBalanceEnabled =
-        converterConnectorsResult.value.value2;
-      connector._isPurchaseEnabled = converterConnectorsResult.value.value3;
-      connector._isSet = converterConnectorsResult.value.value4;
-      connector._converter = poolAddress.toHexString();
-      connector._connectorToken = tokenAddress.toHexString();
-      connector.save();
-    }
+export function fetchReserveTokens(poolAddress: Address): Array<string> | null {
+  const converterBaseContract = ConverterBase.bind(poolAddress);
+  let tokensCountRes = converterBaseContract.try_connectorTokenCount();
+  if (tokensCountRes.reverted) {
+    tokensCountRes = converterBaseContract.try_reserveTokenCount();
   }
+
+  if (tokensCountRes.reverted) {
+    return null;
+  }
+  const tokensCount = tokensCountRes.value;
+  const tokens = new Array<string>(tokensCount);
+  for (let i = 0; i < tokensCount; i++) {
+    let tokenRes = converterBaseContract.try_connectorTokens(BigInt.fromI32(i));
+    if (tokenRes.reverted) {
+      tokenRes = converterBaseContract.try_reserveTokens(BigInt.fromI32(i));
+    }
+    if (tokenRes.reverted) {
+      return null;
+    }
+    const tokenEntity = getOrCreateToken(tokenRes.value);
+    tokens[i] = tokenEntity.id;
+  }
+  return tokens;
 }
 
-export function fetchConverterConnectorTokens(
-  poolAddress: Address
-): Array<string> | null {
-  const converterContract = ConverterContract.bind(poolAddress);
-  const converterConnectorTokenCountResult =
-    converterContract.try_connectorTokenCount();
-  if (!converterConnectorTokenCountResult.reverted) {
-    const numConnectorTokens = converterConnectorTokenCountResult.value;
-    const tokens = new Array<string>(numConnectorTokens);
-    for (let i = 0; i < numConnectorTokens; i++) {
-      const token = converterContract.try_connectorTokens(BigInt.fromI32(i));
-      if (!token.reverted) {
-        const tokenEntity = getOrCreateToken(token.value);
-        tokens[i] = tokenEntity.id;
-        fetchConnector(poolAddress, Address.fromString(tokenEntity.id));
-      }
-    }
-    return tokens;
+export function fetchAnchor(poolAddress: Address): Address {
+  const converterBaseContract = ConverterBase.bind(poolAddress);
+  let res = converterBaseContract.try_token();
+  if (res.reverted) {
+    res = converterBaseContract.try_anchor();
   }
-  return null;
-}
-
-export function fetchQuickBuyPath(converter: Address): Array<string> | null {
-  const converterContract = ConverterContract.bind(converter);
-  const qBPres = converterContract.try_getQuickBuyPathLength();
-  if (!qBPres.reverted) {
-    const converterQBPLength = qBPres.value.toI32();
-    const poolQuickBuyPath = new Array<string>(converterQBPLength);
-    for (let i = 0; i < converterQBPLength; i++) {
-      const pathMemberAddress = converterContract
-        .quickBuyPath(BigInt.fromI32(i))
-        .toHexString();
-      poolQuickBuyPath[i] = pathMemberAddress;
-    }
-    return poolQuickBuyPath;
+  if (res.reverted) {
+    return Address.zero();
   }
-  return null;
+  return res.value;
 }
 
 export function getOrCreateProtocol(
@@ -292,23 +249,74 @@ export function getOrCreateProtocol(
   return protocol;
 }
 
+export function createPoolFees(
+  poolAddress: string,
+  blockNumber: BigInt
+): string[] {
+  // get or create fee entities, set fee types
+  // let poolLpFee = LiquidityPoolFee.load(poolAddress.concat("-lp-fee"));
+  // if (!poolLpFee) {
+  //   poolLpFee = new LiquidityPoolFee(poolAddress.concat("-lp-fee"));
+  //   poolLpFee.feeType = LiquidityPoolFeeType.FIXED_LP_FEE;
+  // }
+  //
+  // let poolProtocolFee = LiquidityPoolFee.load(
+  //     poolAddress.concat("-protocol-fee")
+  // );
+  // if (!poolProtocolFee) {
+  //   poolProtocolFee = new LiquidityPoolFee(poolAddress.concat("-protocol-fee"));
+  //   poolProtocolFee.feeType = LiquidityPoolFeeType.FIXED_PROTOCOL_FEE;
+  // }
+
+  let poolTradingFee = LiquidityPoolFee.load(
+    poolAddress.concat("-trading-fee")
+  );
+  const converterContract = ConverterBase.bind(Address.fromString(poolAddress));
+  if (!poolTradingFee) {
+    poolTradingFee = new LiquidityPoolFee(poolAddress.concat("-trading-fee"));
+    poolTradingFee.feeType = LiquidityPoolFeeType.DYNAMIC_TRADING_FEE;
+    const res = converterContract.try_conversionFee();
+    if (!res.reverted) {
+      poolTradingFee.feePercentage = convertToExp18(res.value, 18);
+    } else {
+      const maxRes = converterContract.try_maxConversionFee();
+      if (!maxRes.reverted) {
+        poolTradingFee.feePercentage = convertToExp18(maxRes.value, 18);
+      } else {
+        poolTradingFee.feePercentage = BigDecimal.fromString("30000");
+      }
+    }
+  }
+
+  // // set fees
+  // if (NetworkConfigs.getFeeOnOff() == FeeSwitch.ON) {
+  //   poolLpFee.feePercentage = NetworkConfigs.getLPFeeToOn(blockNumber);
+  //   poolProtocolFee.feePercentage =
+  //       NetworkConfigs.getProtocolFeeToOn(blockNumber);
+  // } else {
+  //   poolLpFee.feePercentage = NetworkConfigs.getLPFeeToOff();
+  //   poolProtocolFee.feePercentage = NetworkConfigs.getProtocolFeeToOff();
+  // }
+  //
+  // poolTradingFee.feePercentage = NetworkConfigs.getTradeFee(blockNumber);
+  //
+  // poolLpFee.save();
+  // poolProtocolFee.save();
+  poolTradingFee.save();
+
+  return [poolTradingFee.id];
+}
+
 export function getOrCreateLiquidityPool(
-  factoryAddress: string,
-  protocolName: string,
-  protocolSlug: string,
+  protocol: string,
   poolAddress: Address,
   blockTimestamp: BigInt,
   blockNumber: BigInt
 ): LiquidityPool {
   let pool = LiquidityPool.load(poolAddress.toHexString());
+  const converterBaseContract = ConverterBase.bind(poolAddress);
   if (!pool) {
-    const protocol = getOrCreateProtocol(
-      factoryAddress,
-      protocolName,
-      protocolSlug
-    );
     pool = new LiquidityPool(poolAddress.toHexString());
-    pool.protocol = protocol.id;
     pool.name = "Bancor V2 Converter";
     pool.symbol = "bancor-v2";
     pool.inputTokens = [];
@@ -329,56 +337,71 @@ export function getOrCreateLiquidityPool(
     pool.rewardTokens = [];
     pool.rewardTokenEmissionsAmount = [ZERO_BI];
     pool.rewardTokenEmissionsUSD = [ZERO_BD];
-
-    protocol.totalPoolCount += 1;
-
-    //save
-    protocol.save();
+    pool.outputToken = fetchAnchor(poolAddress).toHexString();
 
     ConverterTemplate.create(poolAddress);
   }
-
-  const converterContract = ConverterContract.bind(poolAddress);
-
-  const poolQuickBuyPath = pool._quickBuyPath;
-  if (!poolQuickBuyPath || poolQuickBuyPath.length == 0) {
-    pool._quickBuyPath = fetchQuickBuyPath(Address.fromString(pool.id));
+  if (!Address.fromString(protocol).equals(Address.zero())) {
+    pool.protocol = protocol;
   }
 
-  const tokens = fetchConverterConnectorTokens(Address.fromString(pool.id));
+  const tokens = fetchReserveTokens(Address.fromString(pool.id));
   if (tokens) {
     pool.inputTokens = tokens;
+    const tokenCount = tokens.length;
     const balances = new Array<BigInt>(tokens.length);
-    balances.fill(ZERO_BI);
+    const weights = new Array<BigDecimal>(tokens.length);
+    const isSets = new Array<boolean>(tokens.length);
+    for (let i = 0; i < tokenCount; i++) {
+      const token = Token.load(tokens[i]) as Token;
+      const connectorRes = converterBaseContract.try_connectors(
+        Address.fromString(tokens[i])
+      );
+      if (!connectorRes.reverted) {
+        balances[i] = BigInt.fromString(
+          convertToExp18(connectorRes.value.value0, token.decimals).toString()
+        );
+        weights[i] = convertToExp18(connectorRes.value.value1, token.decimals);
+        isSets[i] = connectorRes.value.value4;
+      } else {
+        const reserveRes = converterBaseContract.try_reserves(
+          Address.fromString(tokens[i])
+        );
+        if (!reserveRes.reverted) {
+          balances[i] = BigInt.fromString(
+            convertToExp18(reserveRes.value.value0, token.decimals).toString()
+          );
+          weights[i] = convertToExp18(reserveRes.value.value1, token.decimals);
+          isSets[i] = reserveRes.value.value4;
+        } else {
+          balances[i] = ZERO_BI;
+          weights[i] = ZERO_BD;
+          isSets[i] = false;
+        }
+      }
+    }
     pool.inputTokenBalances = balances;
+    pool.inputTokenWeights = weights;
+    pool._inputTokenIsSets = isSets;
   }
 
-  const converterVersionResult = converterContract.try_version();
+  const converterVersionResult = converterBaseContract.try_version();
   if (!converterVersionResult.reverted) {
-    pool._version = converterVersionResult.value;
+    pool._version = converterVersionResult.value.toString();
   }
 
-  const converterOwnerResult = converterContract.try_owner();
-  if (!converterOwnerResult.reverted) {
-    pool._owner = converterOwnerResult.value.toHex();
-  }
-  const converterManagerResult = converterContract.try_manager();
-  if (!converterManagerResult.reverted) {
-    pool._manager = converterManagerResult.value.toHex();
-  }
-  const converterMaxConversionFeeResult =
-    converterContract.try_maxConversionFee();
-  if (!converterMaxConversionFeeResult.reverted) {
-    pool._conversionFee = converterMaxConversionFeeResult.value;
-  }
-  const converterTypeResult = converterContract.try_converterType();
+  const converterTypeResult = converterBaseContract.try_converterType();
   if (!converterTypeResult.reverted) {
-    pool._type = converterTypeResult.value;
+    pool._type = converterTypeResult.value.toString();
   }
 
-  const converterContractRegistryResult = converterContract.try_registry();
-  if (!converterContractRegistryResult.reverted) {
-    pool.protocol = converterContractRegistryResult.value.toHexString();
+  // todo: add into pool.fees
+  let converterConversionFeeResult = converterBaseContract.try_conversionFee();
+  if (converterConversionFeeResult.reverted) {
+    converterConversionFeeResult = converterBaseContract.try_maxConversionFee();
+  }
+  if (!converterConversionFeeResult.reverted) {
+    const tradeFee = converterConversionFeeResult.value;
   }
 
   pool.save();
@@ -396,25 +419,26 @@ export function getOrCreateToken(address: Address): Token {
     const decimal = fetchTokenDecimals(address);
     token.decimals = decimal;
     token.lastPriceUSD = ZERO_BD;
-    token._isSmartToken = false;
-    token.save();
-  }
-
-  //for V1 classical hardcode pools
-  if (token.symbol == "unknown") {
-    token.symbol = fetchTokenSymbol(address);
-    token.name = fetchTokenName(address);
-    const decimal = fetchTokenDecimals(address);
-    token.decimals = decimal;
+    token._isAnchor = false;
     token.save();
   }
 
   return token as Token;
 }
 
-export function getOrCreateSmartToken(address: Address): Token {
+export function getOrCreateSmartToken(
+  protocolAddress: string,
+  address: Address,
+  blockTimestamp: BigInt,
+  blockNumber: BigInt
+): Token {
+  const protocol = getOrCreateProtocol(
+    protocolAddress,
+    "Bancor V2",
+    "bancor-v2"
+  );
+
   let token = Token.load(address.toHexString());
-  const smartTokenContract = SmartTokenContract.bind(address);
   if (!token) {
     token = new Token(address.toHexString());
     token.symbol = fetchTokenSymbol(address);
@@ -423,41 +447,44 @@ export function getOrCreateSmartToken(address: Address): Token {
     const decimal = fetchTokenDecimals(address);
     token.decimals = decimal;
     token.lastPriceUSD = ZERO_BD;
-
-    token._isSmartToken = true;
-
-    const smartTokenVersionResult = smartTokenContract.try_version();
-    if (!smartTokenVersionResult.reverted) {
-      token._version = smartTokenVersionResult.value;
-    }
-    const smartTokenStandardResult = smartTokenContract.try_standard();
-    if (!smartTokenStandardResult.reverted) {
-      token._standard = smartTokenStandardResult.value;
-    }
-    const smartTokenTransfersEnabledResult =
-      smartTokenContract.try_transfersEnabled();
-    if (!smartTokenTransfersEnabledResult.reverted) {
-      token._transfersEnabled = smartTokenTransfersEnabledResult.value;
-    }
-
-    SmartTokenTemplate.create(address);
-
-    const poolAddress = smartTokenContract.owner();
-    token._owner = poolAddress.toHexString();
-
-    const tokens = fetchConverterConnectorTokens(poolAddress);
-    if (tokens) {
-      token._connectorTokens = tokens;
-    }
+    token._isAnchor = true;
   }
 
-  if (token.symbol == "unknown") {
-    token.symbol = fetchTokenSymbol(address);
-    token.name = fetchTokenName(address);
-    const decimal = fetchTokenDecimals(address);
-    token.decimals = decimal;
-  }
+  //update Owner
+  const smartTokenContract = SmartTokenContract.bind(address);
+  const poolAddressRes = smartTokenContract.try_owner();
+  if (!poolAddressRes.reverted) {
+    const poolAddress = poolAddressRes.value.toHexString();
+    const pool = getOrCreateLiquidityPool(
+      protocol.id,
+      Address.fromString(poolAddress),
+      blockTimestamp,
+      blockNumber
+    );
+    token._pool = pool.id;
+    pool.outputToken = token.id;
 
+    const type = pool._type;
+    if (type) {
+      let typeName = "";
+      if (type == "0") {
+        typeName = "Liquidity Token Converter";
+      } else if (type == "1") {
+        typeName = "LiquidityPoolV1Converter";
+      } else if (type == "2") {
+        typeName = "LiquidityPoolV2Converter";
+      } else if (type == "3") {
+        typeName = "StablePoolConverter";
+      }
+      pool.name = protocol.name
+        .concat("-")
+        .concat(typeName)
+        .concat("-")
+        .concat(token.name);
+      pool.symbol = protocol.slug.concat("-").concat(token.symbol);
+    }
+    pool.save();
+  }
   token.save();
   return token;
 }

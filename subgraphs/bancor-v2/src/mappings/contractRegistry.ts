@@ -1,26 +1,46 @@
 import {
   AddressUpdate,
+  ContractRegistryContract,
   OwnerUpdate as ContractRegistryOwnerUpdate,
 } from "../../generated/ContractRegistryContract/ContractRegistryContract";
-import { _ContractRegistry, DexAmmProtocol } from "../../generated/schema";
-import { getOrCreateProtocol } from "./helper";
+import { _ContractRegistry } from "../../generated/schema";
+import { Address } from "@graphprotocol/graph-ts";
 
 // Contract Registry events
 export function handleAddressUpdate(event: AddressUpdate): void {
-  const contractRegistryEntity = new _ContractRegistry(event.address.toHex());
-  const protocolName = event.params._contractName.toString();
-  const protocolAddress = event.params._contractAddress.toHex();
-
-  if (protocolName == "BancorConverterRegistry") {
-    const protocols =
-      (contractRegistryEntity.converterRegistries as Array<string>) ||
-      ([] as Array<string>);
-    getOrCreateProtocol(protocolAddress, protocolName, "") as DexAmmProtocol;
-
-    protocols.push(event.params._contractAddress.toHexString());
-    contractRegistryEntity.converterRegistries = protocols;
+  const contractAddress = event.params._contractAddress;
+  const contractNameHex = event.params._contractName;
+  let contractRegistry = _ContractRegistry.load(event.address.toHexString());
+  const contractRegistryContract = ContractRegistryContract.bind(event.address);
+  let names: Array<string>, addresses: Array<string>;
+  if (!contractRegistry) {
+    contractRegistry = new _ContractRegistry(event.address.toHexString());
+    const res = contractRegistryContract.try_owner();
+    if (!res.reverted) {
+      contractRegistry.owner = res.value.toHexString();
+    } else {
+      contractRegistry.owner = Address.zero().toHexString();
+    }
+    names = [];
+    addresses = [];
+  } else {
+    names = contractRegistry.contractNames;
+    addresses = contractRegistry.contractAddresses;
   }
-  contractRegistryEntity.save();
+
+  //update ContractRegistry
+  const idx = names.indexOf(contractNameHex.toString());
+  if (idx == -1) {
+    names.push(contractNameHex.toString());
+    addresses.push(contractAddress.toHexString());
+  } else {
+    addresses[idx] = contractAddress.toHexString();
+  }
+  contractRegistry.contractNames = names;
+  contractRegistry.contractAddresses = addresses;
+  contractRegistry.save();
+
+  //update ConverterFactoy Entity
 }
 
 export function handleContractRegistryOwnerUpdate(
