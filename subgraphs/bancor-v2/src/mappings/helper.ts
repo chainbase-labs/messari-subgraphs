@@ -331,6 +331,7 @@ export function getOrCreateLiquidityPool(
     pool.cumulativeVolumeUSD = ZERO_BD;
     pool.inputTokenBalances = [];
     pool.inputTokenWeights = [];
+    pool._inputTokenIsSets = [];
     pool.outputTokenSupply = ZERO_BI;
     pool.outputTokenPriceUSD = ZERO_BD;
     pool.stakedOutputTokenAmount = ZERO_BI;
