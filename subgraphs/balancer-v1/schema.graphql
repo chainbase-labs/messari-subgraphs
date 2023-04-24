@@ -256,13 +256,13 @@ type DexAmmProtocol implements Protocol @entity {
 
   ##### Pools #####
 
-  color: String! # Bronze, Silver, Gold
-  finalizedPoolCount: Int! # Number of finalized pools
-  crpCount: Int! # Number of CRP
-  txCount: BigInt! # Number of txs
-  totalLiquidity: BigDecimal! # All the pools liquidity value in USD
-  totalSwapVolume: BigDecimal! # All the swap volume in USD
-  totalSwapFee: BigDecimal! # All the swap fee in USD
+  _color: String! # Bronze, Silver, Gold
+  _finalizedPoolCount: Int! # Number of finalized pools
+  _crpCount: Int! # Number of CRP
+  _txCount: BigInt! # Number of txs
+  _totalLiquidity: BigDecimal! # All the pools liquidity value in USD
+  _totalSwapVolume: BigDecimal! # All the swap volume in USD
+  _totalSwapFee: BigDecimal! # All the swap fee in USD
 }
 
 ###############################
@@ -475,27 +475,26 @@ type LiquidityPool @entity {
   " All trade (swap) events occurred in this pool "
   swaps: [Swap!]! @derivedFrom(field: "pool")
 
-  controller: Bytes # Controller address
-  publicSwap: Boolean # isPublicSwap
-  finalized: Boolean # isFinalized
-  crp: Boolean # Is configurable rights pool
-  crpController: Bytes # CRP controller address
-  rights: [String!] # List of rights (for CRP)
-  cap: BigInt # Maximum supply if any (for CRP)
-  active: Boolean # isActive
-  swapFee: BigDecimal # Swap Fees
-  totalWeight: BigDecimal!
-  totalShares: BigDecimal # Total pool token shares
-  totalSwapVolume: BigDecimal # Total swap volume in USD
-  totalSwapFee: BigDecimal # Total swap fee in USD
-  liquidity: BigDecimal # Pool liquidity value in USD
-  shares: [PoolShare!] @derivedFrom(field: "poolId")
-  tokensCount: BigInt # Number of tokens in the pool
-  holdersCount: BigInt # Number of addresses holding a positive balance of BPT
-  joinsCount: BigInt! # liquidity has been added
-  exitsCount: BigInt! # liquidity has been removed
-  swapsCount: BigInt!
-  tx: Bytes # Pool creation transaction id
+  _controller: Bytes # Controller address
+  _publicSwap: Boolean # isPublicSwap
+  _finalized: Boolean # isFinalized
+  _crp: Boolean # Is configurable rights pool
+  _crpController: Bytes # CRP controller address
+  _rights: [String!] # List of rights (for CRP)
+  _cap: BigInt # Maximum supply if any (for CRP)
+  _active: Boolean # isActive
+  _swapFee: BigDecimal # Swap Fees
+  _totalWeight: BigDecimal!
+  _totalShares: BigDecimal # Total pool token shares
+  _totalSwapVolume: BigDecimal # Total swap volume in USD
+  _totalSwapFee: BigDecimal # Total swap fee in USD
+  _liquidity: BigDecimal # Pool liquidity value in USD
+  _tokensCount: BigInt # Number of tokens in the pool
+  _holdersCount: BigInt # Number of addresses holding a positive balance of BPT
+  _joinsCount: BigInt! # liquidity has been added
+  _exitsCount: BigInt! # liquidity has been removed
+  _swapsCount: BigInt!
+  _tx: Bytes # Pool creation transaction id
 }
 
 #################################
@@ -820,14 +819,13 @@ type Swap implements Event @entity {
   " The pool involving this transaction "
   pool: LiquidityPool!
 
-  caller: Bytes! #
-  tokenInSym: String! #
-  tokenOutSym: String! #
-  userAddress: User # User address that initiates the swap
-  feeValue: BigDecimal # Swap fee value in USD
-  poolTotalSwapVolume: BigDecimal # Total pool swap volume in USD
-  poolTotalSwapFee: BigDecimal # Total pool swap fee in USD
-  poolLiquidity: BigDecimal # Pool liquidity value in USD
+  _caller: Bytes! #
+  _tokenInSym: String! #
+  _tokenOutSym: String! #
+  _feeValue: BigDecimal # Swap fee value in USD
+  _poolTotalSwapVolume: BigDecimal # Total pool swap volume in USD
+  _poolTotalSwapFee: BigDecimal # Total pool swap fee in USD
+  _poolLiquidity: BigDecimal # Pool liquidity value in USD
 }
 
 # An account is a unique Ethereum address
@@ -912,7 +910,6 @@ type Transaction @entity {
   gasUsed: BigDecimal!
   gasPrice: BigDecimal!
   poolAddress: LiquidityPool
-  userAddress: User
   action: SwapType
   sender: Bytes
 }
@@ -934,18 +931,4 @@ enum SwapType {
   joinswapPoolAmountOut
   exitswapPoolAmountIn
   exitswapExternAmountOut
-}
-
-type PoolShare @entity {
-  id: ID! # poolId + userAddress
-  userAddress: User!
-  poolId: LiquidityPool!
-  balance: BigDecimal!
-}
-
-type User @entity {
-  id: ID!
-  sharesOwned: [PoolShare!] @derivedFrom(field: "userAddress")
-  txs: [Transaction!] @derivedFrom(field: "userAddress")
-  swaps: [Swap!] @derivedFrom(field: "userAddress")
 }

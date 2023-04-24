@@ -9,11 +9,8 @@ import {
 import {
   DexAmmProtocol,
   LiquidityPool,
-  PoolShare,
   Token,
-  TokenPrice,
   Transaction,
-  User,
 } from "../../generated/schema";
 import { BTokenBytes } from "../../generated/templates/Pool/BTokenBytes";
 import { BToken } from "../../generated/templates/Pool/BToken";
@@ -73,14 +70,14 @@ export function getOrCreateProtocol(factoryAddress: string): DexAmmProtocol {
     factory.network = constants.Protocol.NETWORK;
     factory.type = constants.ProtocolType.EXCHANGE;
 
-    factory.color = "Bronze";
+    factory._color = "Bronze";
     factory.totalPoolCount = 0;
-    factory.finalizedPoolCount = 0;
-    factory.crpCount = 0;
-    factory.txCount = constants.BIGINT_ZERO;
-    factory.totalLiquidity = constants.BIGDECIMAL_ZERO;
-    factory.totalSwapVolume = constants.BIGDECIMAL_ZERO;
-    factory.totalSwapFee = constants.BIGDECIMAL_ZERO;
+    factory._finalizedPoolCount = 0;
+    factory._crpCount = 0;
+    factory._txCount = constants.BIGINT_ZERO;
+    factory._totalLiquidity = constants.BIGDECIMAL_ZERO;
+    factory._totalSwapVolume = constants.BIGDECIMAL_ZERO;
+    factory._totalSwapFee = constants.BIGDECIMAL_ZERO;
     //////// Quantitative Data ////////
     factory.totalValueLockedUSD = constants.BIGDECIMAL_ZERO;
     factory.cumulativeVolumeUSD = constants.BIGDECIMAL_ZERO;
@@ -111,22 +108,22 @@ export function getOrCreateLiquidityPool(
     pool.inputTokens = [];
     pool.inputTokenBalances = [];
     pool.inputTokenWeights = [];
-    pool.rights = [];
-    pool.publicSwap = false;
-    pool.finalized = false;
-    pool.active = true;
-    pool.swapFee = BigDecimal.fromString("100000000000000000000");
-    pool.totalWeight = constants.BIGDECIMAL_ZERO;
-    pool.totalShares = constants.BIGDECIMAL_ZERO;
-    pool.totalSwapVolume = constants.BIGDECIMAL_ZERO;
-    pool.totalSwapVolume = constants.BIGDECIMAL_ZERO;
-    pool.totalSwapFee = constants.BIGDECIMAL_ZERO;
-    pool.liquidity = constants.BIGDECIMAL_ZERO;
-    pool.tokensCount = constants.BIGINT_ZERO;
-    pool.holdersCount = constants.BIGINT_ZERO;
-    pool.joinsCount = constants.BIGINT_ZERO;
-    pool.exitsCount = constants.BIGINT_ZERO;
-    pool.swapsCount = constants.BIGINT_ZERO;
+    pool._rights = [];
+    pool._publicSwap = false;
+    pool._finalized = false;
+    pool._active = true;
+    pool._swapFee = BigDecimal.fromString("100000000000000000000");
+    pool._totalWeight = constants.BIGDECIMAL_ZERO;
+    pool._totalShares = constants.BIGDECIMAL_ZERO;
+    pool._totalSwapVolume = constants.BIGDECIMAL_ZERO;
+    pool._totalSwapVolume = constants.BIGDECIMAL_ZERO;
+    pool._totalSwapFee = constants.BIGDECIMAL_ZERO;
+    pool._liquidity = constants.BIGDECIMAL_ZERO;
+    pool._tokensCount = constants.BIGINT_ZERO;
+    pool._holdersCount = constants.BIGINT_ZERO;
+    pool._joinsCount = constants.BIGINT_ZERO;
+    pool._exitsCount = constants.BIGINT_ZERO;
+    pool._swapsCount = constants.BIGINT_ZERO;
     pool.totalValueLockedUSD = constants.BIGDECIMAL_ZERO;
     pool.cumulativeSupplySideRevenueUSD = constants.BIGDECIMAL_ZERO;
     pool.cumulativeProtocolSideRevenueUSD = constants.BIGDECIMAL_ZERO;
@@ -140,26 +137,6 @@ export function getOrCreateLiquidityPool(
     pool.save();
   }
   return pool as LiquidityPool;
-}
-
-export function getOrCreatePoolShareEntity(
-  id: string,
-  pool: string,
-  user: string
-): PoolShare {
-  let poolShare = PoolShare.load(id);
-  if (!poolShare) {
-    poolShare = new PoolShare(id);
-
-    createUserEntity(user);
-
-    poolShare.userAddress = user;
-    poolShare.poolId = pool;
-    poolShare.balance = constants.BIGDECIMAL_ZERO;
-    poolShare.save();
-  }
-
-  return poolShare;
 }
 
 export function getOrCreateTokenEntity(address: Address): Token {
@@ -208,150 +185,6 @@ export function getOrCreateTokenEntity(address: Address): Token {
   return token;
 }
 
-export function updatePoolLiquidity(id: string): void {
-  const pool = getOrCreateLiquidityPool(id);
-  // let tokensList: Array<Bytes> = pool?.tokensList || []
-
-  const tokensList = pool.inputTokens || [];
-
-  if (pool.tokensCount.equals(constants.BIGINT_ZERO)) {
-    pool.liquidity = constants.BIGDECIMAL_ZERO;
-    pool.save();
-    return;
-  }
-
-  if (!tokensList || pool.tokensCount.lt(BigInt.fromI32(2)) || !pool.publicSwap)
-    return;
-
-  // Find pool liquidity
-
-  let hasPrice = false;
-  let hasUsdPrice = false;
-  let poolLiquidity = constants.BIGDECIMAL_ZERO;
-
-  if (tokensList.includes(USD)) {
-    const idx = pool.inputTokens.indexOf(USD);
-    const tokenBalance = pool.inputTokenBalances.at(idx).toBigDecimal();
-    const tokenWeight = pool.inputTokenWeights.at(idx);
-    poolLiquidity = tokenBalance.div(tokenWeight).times(pool.totalWeight);
-    hasPrice = true;
-    hasUsdPrice = true;
-
-    hasPrice = true;
-    hasUsdPrice = true;
-  } else if (tokensList.includes(WETH)) {
-    const wethTokenPrice = TokenPrice.load(WETH);
-    if (wethTokenPrice) {
-      const idx = pool.inputTokens.indexOf(WETH);
-      const tokenBalance = pool.inputTokenBalances.at(idx).toBigDecimal();
-      const tokenWeight = pool.inputTokenWeights.at(idx);
-      poolLiquidity = wethTokenPrice.price
-        .times(tokenBalance)
-        .div(tokenWeight)
-        .times(pool.totalWeight);
-      hasPrice = true;
-    }
-  } else if (tokensList.includes(DAI)) {
-    const daiTokenPrice = TokenPrice.load(DAI);
-    if (daiTokenPrice) {
-      const idx = pool.inputTokens.indexOf(DAI);
-      const tokenBalance = pool.inputTokenBalances.at(idx).toBigDecimal();
-      const tokenWeight = pool.inputTokenWeights.at(idx);
-
-      poolLiquidity = daiTokenPrice.price
-        .times(tokenBalance)
-        .div(tokenWeight)
-        .times(pool.totalWeight);
-      hasPrice = true;
-    }
-  }
-
-  // Create or update token price
-
-  if (hasPrice) {
-    for (let i = 0; i < tokensList.length; i++) {
-      const tokenPriceId = tokensList[i];
-      let tokenPrice = TokenPrice.load(tokenPriceId);
-      if (!tokenPrice) {
-        tokenPrice = new TokenPrice(tokenPriceId);
-        tokenPrice.poolTokenId = "";
-        tokenPrice.poolLiquidity = constants.BIGDECIMAL_ZERO;
-      }
-
-      const poolTokenId = id.concat("-").concat(tokenPriceId);
-
-      if (
-        pool.active &&
-        !pool.crp &&
-        pool.tokensCount.notEqual(constants.BIGINT_ZERO) &&
-        pool.publicSwap &&
-        (tokenPrice.poolTokenId == poolTokenId ||
-          poolLiquidity.gt(tokenPrice.poolLiquidity)) &&
-        ((tokenPriceId != WETH.toString() && tokenPriceId != DAI.toString()) ||
-          (pool.tokensCount.equals(BigInt.fromI32(2)) && hasUsdPrice))
-      ) {
-        tokenPrice.price = constants.BIGDECIMAL_ZERO;
-
-        const idx = pool.inputTokens.indexOf(tokenPriceId);
-        const balance = pool.inputTokenBalances.at(idx).toBigDecimal();
-        const weight = pool.inputTokenWeights.at(idx);
-        if (balance.gt(constants.BIGDECIMAL_ZERO)) {
-          tokenPrice.price = poolLiquidity
-            .div(pool.totalWeight)
-            .times(weight)
-            .div(balance);
-        }
-
-        const token = Token.load(tokenPriceId);
-        if (token != null) {
-          tokenPrice.symbol = token.symbol;
-          tokenPrice.name = token.name;
-          tokenPrice.decimals = token.decimals;
-          tokenPrice.poolLiquidity = poolLiquidity;
-          tokenPrice.poolTokenId = poolTokenId;
-          tokenPrice.save();
-        }
-      }
-    }
-  }
-
-  // Update pool liquidity
-
-  let liquidity = constants.BIGDECIMAL_ZERO;
-  let denormWeight = constants.BIGDECIMAL_ZERO;
-
-  for (let i = 0; i < tokensList.length; i++) {
-    const tokenPriceId = tokensList[i];
-    const tokenPrice = TokenPrice.load(tokenPriceId);
-    if (tokenPrice) {
-      const idx = pool.inputTokens.indexOf(tokenPriceId);
-      const weight = pool.inputTokenWeights.at(idx);
-      const balance = pool.inputTokenBalances.at(idx).toBigDecimal();
-      if (
-        tokenPrice.price.gt(constants.BIGDECIMAL_ZERO) &&
-        weight.gt(denormWeight)
-      ) {
-        denormWeight = weight;
-        liquidity = tokenPrice.price
-          .times(balance)
-          .div(weight)
-          .times(pool.totalWeight);
-      }
-    }
-  }
-
-  const factory = DexAmmProtocol.load(constants.FACTORY_ADDRESS.toHexString());
-  if (factory) {
-    factory.totalLiquidity = factory.totalLiquidity
-      .minus(pool.liquidity)
-      .plus(liquidity);
-    factory.save();
-  }
-
-  pool.liquidity = liquidity;
-  pool.save();
-}
-
 export function decrPoolCount(
   active: boolean,
   finalized: boolean,
@@ -364,8 +197,8 @@ export function decrPoolCount(
     if (factory != null) {
       factory.totalPoolCount = factory.totalPoolCount - 1;
       if (finalized)
-        factory.finalizedPoolCount = factory.finalizedPoolCount - 1;
-      if (crp) factory.crpCount = factory.crpCount - 1;
+        factory._finalizedPoolCount = factory._finalizedPoolCount - 1;
+      if (crp) factory._crpCount = factory._crpCount - 1;
       factory.save();
     }
   }
@@ -379,29 +212,18 @@ export function saveTransaction(
     .toHexString()
     .concat("-")
     .concat(event.logIndex.toString());
-  const userAddress = event.transaction.from.toHex();
   let transaction = Transaction.load(tx);
   if (!transaction) {
     transaction = new Transaction(tx);
   }
   transaction.event = eventName;
   transaction.poolAddress = event.address.toHex();
-  transaction.userAddress = userAddress;
   // transaction.gasUsed = event.transaction.gasUsed.toBigDecimal()
   transaction.gasPrice = event.transaction.gasPrice.toBigDecimal();
   transaction.tx = event.transaction.hash;
   transaction.timestamp = event.block.timestamp.toI32();
   transaction.block = event.block.number.toI32();
   transaction.save();
-
-  createUserEntity(userAddress);
-}
-
-export function createUserEntity(address: string): void {
-  if (!User.load(address)) {
-    const user = new User(address);
-    user.save();
-  }
 }
 
 export function isCrp(address: Address): boolean {

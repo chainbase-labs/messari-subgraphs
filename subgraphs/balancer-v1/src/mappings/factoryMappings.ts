@@ -1,4 +1,4 @@
-import { Address, log } from "@graphprotocol/graph-ts";
+import { Address } from "@graphprotocol/graph-ts";
 import { LOG_NEW_POOL } from "../../generated/Factory/Factory";
 import {
   CrpController as CrpControllerContract,
@@ -24,23 +24,23 @@ export function handleNewPool(event: LOG_NEW_POOL): void {
   );
 
   pool.protocol = factory.id;
-  pool.crp = isCrp(event.params.caller);
-  pool.controller = event.params.caller;
+  pool._crp = isCrp(event.params.caller);
+  pool._controller = event.params.caller;
   pool.createdTimestamp = event.block.timestamp;
-  pool.tx = event.transaction.hash;
+  pool._tx = event.transaction.hash;
 
-  if (pool.crp) {
-    factory.crpCount += 1;
+  if (pool._crp) {
+    factory._crpCount += 1;
     const crp = ConfigurableRightsPool.bind(event.params.caller);
     pool.symbol = getCrpSymbol(crp);
     pool.name = getCrpName(crp);
     const crpControl = getCrpController(crp);
 
     if (crpControl) {
-      pool.crpController = Address.fromString(crpControl);
+      pool._crpController = Address.fromString(crpControl);
     }
-    pool.rights = getCrpRights(crp);
-    pool.cap = getCrpCap(crp);
+    pool._rights = getCrpRights(crp);
+    pool._cap = getCrpCap(crp);
 
     // Listen for any future crpController changes.
     CrpControllerContract.create(event.params.caller);
