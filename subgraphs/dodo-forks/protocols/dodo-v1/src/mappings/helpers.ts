@@ -54,15 +54,6 @@ export function exponentToBigDecimal(decimals: i32): BigDecimal {
   return scale;
 }
 
-export function convertToExp18(
-  amount: BigInt,
-  exchangeDecimals: i32
-): BigDecimal {
-  return convertTokenToDecimal(amount, exchangeDecimals).times(
-    exponentToBigDecimal(18)
-  );
-}
-
 export function bigDecimalExp18(): BigDecimal {
   return BigDecimal.fromString("1000000000000000000");
 }
@@ -101,10 +92,9 @@ export function calculateLpFee(
   volume: BigDecimal,
   lpFeeRate: BigDecimal
 ): BigDecimal {
-  return volume
-    .div(bigDecimalExp18())
-    .times(lpFeeRate.div(bigDecimalExp18()))
-    .times(bigDecimalExp18());
+  return volume.times(
+    convertTokenToDecimal(BigInt.fromString(lpFeeRate.toString()), 18)
+  );
 }
 
 export function fetchTokenSymbol(tokenAddress: Address): string {
@@ -362,9 +352,7 @@ export function getOrCreateToken(address: Address, timestamp: BigInt): Token {
     }
     let decimal = fetchTokenDecimals(address);
     token.decimals = decimal;
-    token._totalSupply = BigInt.fromString(
-      convertToExp18(fetchTokenTotalSupply(address), decimal).toString()
-    );
+    token._totalSupply = fetchTokenTotalSupply(address);
     token._tradeVolume = ZERO_BD;
     token._totalLiquidityOnDODO = ZERO_BD;
     token.lastPriceUSD = ZERO_BD;
@@ -392,9 +380,7 @@ export function getOrCreateToken(address: Address, timestamp: BigInt): Token {
     token.name = fetchTokenName(address);
     let decimal = fetchTokenDecimals(address);
     token.decimals = decimal;
-    token._totalSupply = BigInt.fromString(
-      convertToExp18(fetchTokenTotalSupply(address), decimal).toString()
-    );
+    token._totalSupply = fetchTokenTotalSupply(address);
     token.save();
   }
 
@@ -423,9 +409,7 @@ export function getOrCreateLpToken(
     lpToken.symbol = fetchTokenSymbol(address);
     let decimal = fetchTokenDecimals(address);
     lpToken.decimals = decimal;
-    lpToken._totalSupply = BigInt.fromString(
-      convertToExp18(fetchTokenTotalSupply(address), decimal).toString()
-    );
+    lpToken._totalSupply = fetchTokenTotalSupply(address);
     lpToken.name = fetchTokenName(address);
   }
   lpToken._tradeVolume = ZERO_BD;

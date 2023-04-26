@@ -33,7 +33,6 @@ import {
   WRAPPED_BASE_COIN,
 } from "../../src/common/constant";
 import { LiquidityPool, Token } from "../../generated/schema";
-import { convertToExp18 } from "../../protocols/dodo-v1/src/mappings/helpers";
 
 describe("handleDodo-v1", () => {
   beforeAll(() => {
@@ -551,15 +550,12 @@ describe("handleDodo-v1", () => {
       "outputTokenAmount",
       lpTokenAmount
     );
-    let quoteTokenBalance18 = convertToExp18(
-      BigInt.fromString(quoteTokenBalance),
-      6
-    ).toString();
+
     assert.fieldEquals(
       "LiquidityPool",
       address,
       "inputTokenBalances",
-      "[" + baseTokenBalance + ", " + quoteTokenBalance18 + "]"
+      "[" + baseTokenBalance + ", " + quoteTokenBalance + "]"
     );
     assert.fieldEquals(
       "Token",
@@ -641,32 +637,26 @@ describe("handleDodo-v1", () => {
       quoteCapitalToken
     );
     assert.fieldEquals("Withdraw", txHash + "-" + logIndex, "amountUSD", "0");
-    let amount18 = convertToExp18(BigInt.fromString(amount), 6).toString();
+
     assert.fieldEquals(
       "Withdraw",
       txHash + "-" + logIndex,
       "inputTokenAmounts",
-      "[0, " + amount18 + "]"
+      "[0, " + amount + "]"
     );
-    let lpTokenAmount18 = convertToExp18(
-      BigInt.fromString(lpTokenAmount),
-      6
-    ).toString();
+
     assert.fieldEquals(
       "Withdraw",
       txHash + "-" + logIndex,
       "outputTokenAmount",
-      lpTokenAmount18
+      lpTokenAmount
     );
-    let quoteTokenBalance18 = convertToExp18(
-      BigInt.fromString(quoteTokenBalance),
-      6
-    ).toString();
+
     assert.fieldEquals(
       "LiquidityPool",
       address,
       "inputTokenBalances",
-      "[" + baseTokenBalance + ", " + quoteTokenBalance18 + "]"
+      "[" + baseTokenBalance + ", " + quoteTokenBalance + "]"
     );
     assert.fieldEquals(
       "Token",
@@ -678,10 +668,9 @@ describe("handleDodo-v1", () => {
       "Token",
       quoteToken,
       "_totalSupply",
-      convertToExp18(
-        BigInt.fromString("30788496417169550").minus(BigInt.fromString(amount)),
-        6
-      ).toString()
+      BigInt.fromString("30788496417169550")
+        .minus(BigInt.fromString(amount))
+        .toString()
     );
 
     assert.fieldEquals("Token", baseCapitalToken, "_totalSupply", "0");
@@ -689,7 +678,7 @@ describe("handleDodo-v1", () => {
       "Token",
       quoteCapitalToken,
       "_totalSupply",
-      "-" + lpTokenAmount18
+      "-" + lpTokenAmount
     );
   });
 
@@ -730,22 +719,18 @@ describe("handleDodo-v1", () => {
       quoteToken
     );
     assert.fieldEquals("Swap", "swap-" + txHash + "-" + logIndex, "to", seller);
-    let payQuote18 = convertToExp18(BigInt.fromString(payBase), 6).toString();
+
     assert.fieldEquals(
       "Swap",
       "swap-" + txHash + "-" + logIndex,
       "amountIn",
-      payQuote18
+      payBase
     );
-    let receiveBase18 = convertToExp18(
-      BigInt.fromString(receiveQuote),
-      6
-    ).toString();
     assert.fieldEquals(
       "Swap",
       "swap-" + txHash + "-" + logIndex,
       "amountOut",
-      receiveBase18
+      receiveQuote
     );
     assert.fieldEquals(
       "Swap",
@@ -763,46 +748,36 @@ describe("handleDodo-v1", () => {
       "Swap",
       "swap-" + txHash + "-" + logIndex,
       "_feeQuote",
-      "279073005873000000000"
+      "279073005.873"
     );
     assert.fieldEquals(
       "Swap",
       "swap-" + txHash + "-" + logIndex,
       "_baseVolume",
-      payQuote18
+      payBase
     );
     assert.fieldEquals(
       "Swap",
       "swap-" + txHash + "-" + logIndex,
       "_quoteVolume",
-      receiveBase18
+      receiveQuote
     );
 
     assert.fieldEquals("LiquidityPool", address, "_txCount", "1");
-    assert.fieldEquals(
-      "LiquidityPool",
-      address,
-      "_volumeBaseToken",
-      payQuote18
-    );
+    assert.fieldEquals("LiquidityPool", address, "_volumeBaseToken", payBase);
     assert.fieldEquals(
       "LiquidityPool",
       address,
       "_volumeQuoteToken",
-      receiveBase18
+      receiveQuote
     );
     assert.fieldEquals("LiquidityPool", address, "_feeBase", "0");
-    assert.fieldEquals(
-      "LiquidityPool",
-      address,
-      "_feeQuote",
-      "279073005873000000000"
-    );
+    assert.fieldEquals("LiquidityPool", address, "_feeQuote", "279073005.873");
     assert.fieldEquals(
       "LiquidityPool",
       address,
       "inputTokenBalances",
-      "[" + payQuote18 + ", -" + receiveBase18 + "]"
+      "[" + payBase + ", -" + receiveQuote + "]"
     );
   });
 
@@ -843,22 +818,18 @@ describe("handleDodo-v1", () => {
       baseToken
     );
     assert.fieldEquals("Swap", "swap-" + txHash + "-" + logIndex, "to", buyer);
-    let payQuote18 = convertToExp18(BigInt.fromString(payQuote), 6).toString();
     assert.fieldEquals(
       "Swap",
       "swap-" + txHash + "-" + logIndex,
       "amountIn",
-      payQuote18
+      payQuote
     );
-    let receiveBase18 = convertToExp18(
-      BigInt.fromString(receiveBase),
-      6
-    ).toString();
+
     assert.fieldEquals(
       "Swap",
       "swap-" + txHash + "-" + logIndex,
       "amountOut",
-      receiveBase18
+      receiveBase
     );
     assert.fieldEquals(
       "Swap",
@@ -870,7 +841,7 @@ describe("handleDodo-v1", () => {
       "Swap",
       "swap-" + txHash + "-" + logIndex,
       "_feeBase",
-      "279073005873000000000"
+      "279073005.873"
     );
     assert.fieldEquals(
       "Swap",
@@ -882,39 +853,29 @@ describe("handleDodo-v1", () => {
       "Swap",
       "swap-" + txHash + "-" + logIndex,
       "_baseVolume",
-      receiveBase18
+      receiveBase
     );
     assert.fieldEquals(
       "Swap",
       "swap-" + txHash + "-" + logIndex,
       "_quoteVolume",
-      payQuote18
+      payQuote
     );
 
     assert.fieldEquals("LiquidityPool", address, "_txCount", "2");
-    assert.fieldEquals(
-      "LiquidityPool",
-      address,
-      "_feeBase",
-      "279073005873000000000"
-    );
-    assert.fieldEquals(
-      "LiquidityPool",
-      address,
-      "_feeQuote",
-      "279073005873000000000"
-    );
+    assert.fieldEquals("LiquidityPool", address, "_feeBase", "279073005.873");
+    assert.fieldEquals("LiquidityPool", address, "_feeQuote", "279073005.873");
     assert.fieldEquals(
       "LiquidityPool",
       address,
       "inputTokenBalances",
       "[" +
-        BigInt.fromString(payQuote18)
-          .minus(BigInt.fromString(receiveBase18))
+        BigInt.fromString(payQuote)
+          .minus(BigInt.fromString(receiveBase))
           .toString() +
         ", " +
-        BigInt.fromString(payQuote18)
-          .minus(BigInt.fromString(receiveBase18))
+        BigInt.fromString(payQuote)
+          .minus(BigInt.fromString(receiveBase))
           .toString() +
         "]"
     );

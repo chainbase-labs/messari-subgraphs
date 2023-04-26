@@ -16,7 +16,6 @@ import {
 import {
   bigDecimalExp18,
   calculateLpFee,
-  convertToExp18,
   createLiquidityPool,
   fetchTokenBalance,
   getOrCreateLpToken,
@@ -188,7 +187,7 @@ export function handleDODOBirth(event: DODOBirth): void {
     const dodo = DODOTemplate.bind(event.params.newBorn);
     const baseLpToken = dodo._BASE_CAPITAL_TOKEN_();
     const quoteLpToken = dodo._QUOTE_CAPITAL_TOKEN_();
-    const lpFeeRate = convertToExp18(dodo._LP_FEE_RATE_(), 18);
+    const lpFeeRate = dodo._LP_FEE_RATE_();
     createLiquidityPool(
       event.params.newBorn,
       event.params.baseToken,
@@ -197,7 +196,7 @@ export function handleDODOBirth(event: DODOBirth): void {
       quoteLpToken,
       event.block.timestamp,
       event.block.number,
-      lpFeeRate,
+      lpFeeRate.toBigDecimal(),
       TYPE_CLASSICAL_POOL
     );
   }
@@ -228,14 +227,8 @@ export function handleDeposit(event: Deposit): void {
     event.block.timestamp
   );
 
-  const amount = convertToExp18(
-    event.params.amount,
-    event.params.isBaseToken ? baseToken.decimals : quoteToken.decimals
-  );
-  const lpAmount = convertToExp18(
-    event.params.lpTokenAmount,
-    event.params.isBaseToken ? baseLpToken.decimals : quoteLpToken.decimals
-  );
+  const amount = event.params.amount;
+  const lpAmount = event.params.lpTokenAmount;
 
   const logIndexI32 = event.logIndex.toI32();
   const transactionHash = event.transaction.hash.toHexString();
@@ -254,7 +247,7 @@ export function handleDeposit(event: Deposit): void {
   deposit.inputTokens = [pair.inputTokens[0], pair.inputTokens[1]];
   if (event.params.isBaseToken) {
     deposit.outputToken = pair._baseLpToken;
-    deposit.amountUSD = baseToken.lastPriceUSD!.times(amount);
+    deposit.amountUSD = ZERO_BD;
     deposit.inputTokenAmounts = [BigInt.fromString(amount.toString()), ZERO_BI];
     baseToken._txCount = baseToken._txCount.plus(ONE_BI);
     baseLpToken._txCount = baseLpToken._txCount.plus(ONE_BI);
@@ -266,7 +259,7 @@ export function handleDeposit(event: Deposit): void {
     );
   } else {
     deposit.outputToken = pair._quoteLpToken;
-    deposit.amountUSD = quoteToken.lastPriceUSD!.times(amount);
+    deposit.amountUSD = ZERO_BD;
     deposit.inputTokenAmounts = [ZERO_BI, BigInt.fromString(amount.toString())];
     quoteToken._txCount = quoteToken._txCount.plus(ONE_BI);
     quoteLpToken._txCount = quoteLpToken._txCount.plus(ONE_BI);
@@ -279,17 +272,13 @@ export function handleDeposit(event: Deposit): void {
   }
   deposit.outputTokenAmount = BigInt.fromString(lpAmount.toString());
   deposit.pool = pair.id;
-  const baseTokenBalance = BigInt.fromString(
-    convertToExp18(
-      fetchTokenBalance(Address.fromString(baseToken.id), event.address),
-      baseToken.decimals
-    ).toString()
+  const baseTokenBalance = fetchTokenBalance(
+    Address.fromString(baseToken.id),
+    event.address
   );
-  const quoteTokenBalance = BigInt.fromString(
-    convertToExp18(
-      fetchTokenBalance(Address.fromString(quoteToken.id), event.address),
-      quoteToken.decimals
-    ).toString()
+  const quoteTokenBalance = fetchTokenBalance(
+    Address.fromString(quoteToken.id),
+    event.address
   );
 
   pair.inputTokenBalances = [baseTokenBalance, quoteTokenBalance];
@@ -328,14 +317,8 @@ export function handleWithdraw(event: Withdraw): void {
   );
 
   // update exchange info (except balances, sync will cover that)
-  const amount = convertToExp18(
-    event.params.amount,
-    event.params.isBaseToken ? baseToken.decimals : quoteToken.decimals
-  );
-  const lpAmount = convertToExp18(
-    event.params.lpTokenAmount,
-    event.params.isBaseToken ? baseLpToken.decimals : quoteLpToken.decimals
-  );
+  const amount = event.params.amount;
+  const lpAmount = event.params.lpTokenAmount;
 
   const logIndexI32 = event.logIndex.toI32();
   const transactionHash = event.transaction.hash.toHexString();
@@ -354,7 +337,7 @@ export function handleWithdraw(event: Withdraw): void {
   withdrawal.inputTokens = [pair.inputTokens[0], pair.inputTokens[1]];
   if (event.params.isBaseToken) {
     withdrawal.outputToken = pair._baseLpToken;
-    withdrawal.amountUSD = baseToken.lastPriceUSD!.times(amount);
+    withdrawal.amountUSD = ZERO_BD;
     withdrawal.inputTokenAmounts = [
       BigInt.fromString(amount.toString()),
       ZERO_BI,
@@ -369,7 +352,7 @@ export function handleWithdraw(event: Withdraw): void {
     );
   } else {
     withdrawal.outputToken = pair._quoteLpToken;
-    withdrawal.amountUSD = quoteToken.lastPriceUSD!.times(amount);
+    withdrawal.amountUSD = ZERO_BD;
     withdrawal.inputTokenAmounts = [
       ZERO_BI,
       BigInt.fromString(amount.toString()),
@@ -386,17 +369,13 @@ export function handleWithdraw(event: Withdraw): void {
 
   withdrawal.outputTokenAmount = BigInt.fromString(lpAmount.toString());
   withdrawal.pool = pair.id;
-  const baseTokenBalance = BigInt.fromString(
-    convertToExp18(
-      fetchTokenBalance(Address.fromString(baseToken.id), event.address),
-      baseToken.decimals
-    ).toString()
+  const baseTokenBalance = fetchTokenBalance(
+    Address.fromString(baseToken.id),
+    event.address
   );
-  const quoteTokenBalance = BigInt.fromString(
-    convertToExp18(
-      fetchTokenBalance(Address.fromString(quoteToken.id), event.address),
-      quoteToken.decimals
-    ).toString()
+  const quoteTokenBalance = fetchTokenBalance(
+    Address.fromString(quoteToken.id),
+    event.address
   );
 
   pair.inputTokenBalances = [baseTokenBalance, quoteTokenBalance];
@@ -429,11 +408,11 @@ export function handleSellBaseToken(event: SellBaseToken): void {
 
   const fromToken = baseToken;
   const toToken = quoteToken;
-  const fromAmount = convertToExp18(event.params.payBase, fromToken.decimals);
-  const toAmount = convertToExp18(event.params.receiveQuote, toToken.decimals);
+  const fromAmount = event.params.payBase;
+  const toAmount = event.params.receiveQuote;
 
-  const baseVolume = fromAmount;
-  const quoteVolume = toAmount;
+  const baseVolume = fromAmount.toBigDecimal();
+  const quoteVolume = toAmount.toBigDecimal();
   const baseLpFee = ZERO_BD;
   const quoteLpFee = calculateLpFee(quoteVolume, pair._lpFeeRate);
 
@@ -480,10 +459,12 @@ export function handleSellBaseToken(event: SellBaseToken): void {
   }
   if (SMART_ROUTE_ADDRESSES.indexOf(event.params.seller.toHexString()) == -1) {
     fromToken._txCount = fromToken._txCount.plus(ONE_BI);
-    fromToken._tradeVolume = fromToken._tradeVolume.plus(fromAmount);
+    fromToken._tradeVolume = fromToken._tradeVolume.plus(
+      fromAmount.toBigDecimal()
+    );
 
     toToken._txCount = toToken._txCount.plus(ONE_BI);
-    toToken._tradeVolume = toToken._tradeVolume.plus(toAmount);
+    toToken._tradeVolume = toToken._tradeVolume.plus(toAmount.toBigDecimal());
   }
   //save
   pair.save();
@@ -514,10 +495,10 @@ export function handleBuyBaseToken(event: BuyBaseToken): void {
   const fromToken = quoteToken;
   const toToken = baseToken;
 
-  const fromAmount = convertToExp18(event.params.payQuote, fromToken.decimals);
-  const toAmount = convertToExp18(event.params.receiveBase, toToken.decimals);
-  const baseVolume = toAmount;
-  const quoteVolume = fromAmount;
+  const fromAmount = event.params.payQuote;
+  const toAmount = event.params.receiveBase;
+  const baseVolume = toAmount.toBigDecimal();
+  const quoteVolume = fromAmount.toBigDecimal();
   const baseLpFee = calculateLpFee(baseVolume, pair._lpFeeRate);
   const quoteLpFee = ZERO_BD;
 
@@ -563,10 +544,12 @@ export function handleBuyBaseToken(event: BuyBaseToken): void {
   }
   if (SMART_ROUTE_ADDRESSES.indexOf(event.params.buyer.toHexString()) == -1) {
     fromToken._txCount = fromToken._txCount.plus(ONE_BI);
-    fromToken._tradeVolume = fromToken._tradeVolume.plus(fromAmount);
+    fromToken._tradeVolume = fromToken._tradeVolume.plus(
+      fromAmount.toBigDecimal()
+    );
 
     toToken._txCount = toToken._txCount.plus(ONE_BI);
-    toToken._tradeVolume = toToken._tradeVolume.plus(toAmount);
+    toToken._tradeVolume = toToken._tradeVolume.plus(toAmount.toBigDecimal());
   }
   //save
   pair.save();
@@ -582,10 +565,7 @@ export function handleUpdateLiquidityProviderFeeRate(
   if (!pair) {
     return;
   }
-  pair._lpFeeRate = convertToExp18(
-    event.params.newLiquidityProviderFeeRate,
-    18
-  );
+  pair._lpFeeRate = event.params.newLiquidityProviderFeeRate.toBigDecimal();
   pair.save();
 }
 
@@ -666,17 +646,13 @@ export function handleClaimAssets(event: ClaimAssets): void {
   if (pair != null) {
     const baseToken = Token.load(pair.inputTokens[0]) as Token;
     const quoteToken = Token.load(pair.inputTokens[1]) as Token;
-    const baseTokenBalance = BigInt.fromString(
-      convertToExp18(
-        fetchTokenBalance(Address.fromString(baseToken.id), event.address),
-        baseToken.decimals
-      ).toString()
+    const baseTokenBalance = fetchTokenBalance(
+      Address.fromString(baseToken.id),
+      event.address
     );
-    const quoteTokenBalance = BigInt.fromString(
-      convertToExp18(
-        fetchTokenBalance(Address.fromString(quoteToken.id), event.address),
-        quoteToken.decimals
-      ).toString()
+    const quoteTokenBalance = fetchTokenBalance(
+      Address.fromString(quoteToken.id),
+      event.address
     );
     pair.inputTokenBalances = [baseTokenBalance, quoteTokenBalance];
     pair.save();
@@ -713,7 +689,7 @@ export function handleAddDODO(call: AddDODOCall): void {
     const quoteToken = dodo._QUOTE_TOKEN_();
     const baseLpToken = dodo._BASE_CAPITAL_TOKEN_();
     const quoteLpToken = dodo._QUOTE_CAPITAL_TOKEN_();
-    const lpFeeRate = convertToExp18(dodo._LP_FEE_RATE_(), 18);
+    const lpFeeRate = dodo._LP_FEE_RATE_();
     createLiquidityPool(
       call.inputs.dodo,
       baseToken,
@@ -722,7 +698,7 @@ export function handleAddDODO(call: AddDODOCall): void {
       quoteLpToken,
       call.block.timestamp,
       call.block.number,
-      lpFeeRate,
+      lpFeeRate.toBigDecimal(),
       TYPE_CLASSICAL_POOL
     );
   }
