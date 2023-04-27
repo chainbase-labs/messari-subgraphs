@@ -3,7 +3,7 @@ import {
   OrderFulfilled,
   OrderFulfilledConsiderationStruct,
   OrderFulfilledOfferStruct,
-} from "../generated/SeaportExchange/SeaportExchange";
+} from "../generated/templates/SeaportContract/SeaportExchange";
 import {
   Collection,
   CollectionDailySnapshot,
@@ -35,9 +35,13 @@ import {
   SECONDS_PER_DAY,
   WETH_ADDRESS,
 } from "./helper";
-import { NftMetadata } from "../generated/SeaportExchange/NftMetadata";
-import { ERC165 } from "../generated/SeaportExchange/ERC165";
+import { NftMetadata } from "../generated/templates/SeaportContract/NftMetadata";
+import { ERC165 } from "../generated/templates/SeaportContract/ERC165";
 import { NetworkConfigs } from "../configurations/configure";
+import { SafeCreate2Call } from "../generated/ImmutableCreate2Factory/ImmutableCreate2Factory";
+import { SeaportContract } from "../generated/templates";
+
+// import { SeaportContract } from "../generated/templates";
 
 class Sale {
   constructor(
@@ -152,7 +156,7 @@ export function handleOrderFulfilled(event: OrderFulfilled): void {
     trade.priceETH = priceETH;
     trade.amount = saleResult.nfts.amounts[i];
     // if it is a basic order then STANDARD_SALE
-    // otherwise ANY_ITEM_FROM_SET. 
+    // otherwise ANY_ITEM_FROM_SET.
     // TODO: ANY_ITEM_FROM_SET correct strategy? Cannot find docs on how to decide
     trade.strategy = tradeStrategy(event);
     trade.buyer = buyer;
@@ -162,8 +166,8 @@ export function handleOrderFulfilled(event: OrderFulfilled): void {
     // Save details of how trade was fulfilled
     const orderFulfillment = new _OrderFulfillment(tradeID);
     orderFulfillment.trade = tradeID;
-    orderFulfillment.orderFulfillmentMethod = orderFulfillmentMethod(event)
-    orderFulfillment.save()
+    orderFulfillment.orderFulfillmentMethod = orderFulfillmentMethod(event);
+    orderFulfillment.save();
   }
 
   //
@@ -724,4 +728,20 @@ function _DEBUG_join(ss: Array<string>): string {
     s += ss[i];
   }
   return s;
+}
+
+export function handleSafeCreate2Call(call: SafeCreate2Call): void {
+  if (
+    call.from.toHexString().toLowerCase() ==
+      "0x939c8d89ebc11fa45e576215e2353673ad0ba18a" &&
+    call.inputs.initializationCode
+      .toHexString()
+      .toLowerCase()
+      .indexOf(
+        "9d9af8e38d66c62e2c12f0225249fd9d721c54b83f48d9352c97c6cacdcb6f31"
+      ) != -1
+  ) {
+    const poolFactoryAddress = call.outputs.deploymentAddress;
+    SeaportContract.create(poolFactoryAddress);
+  }
 }
