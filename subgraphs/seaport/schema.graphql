@@ -49,91 +49,47 @@ enum SaleStrategy {
 }
 
 enum _BasicOrderRouteType {
-    " 0: provide Ether (or other native token) to receive offered ERC721 item."
-    ETH_TO_ERC721,
+  " 0: provide Ether (or other native token) to receive offered ERC721 item."
+  ETH_TO_ERC721
 
-    " 1: provide Ether (or other native token) to receive offered ERC1155 item."
-    ETH_TO_ERC1155,
+  " 1: provide Ether (or other native token) to receive offered ERC1155 item."
+  ETH_TO_ERC1155
 
-    " 2: provide ERC20 item to receive offered ERC721 item."
-    ERC20_TO_ERC721,
+  " 2: provide ERC20 item to receive offered ERC721 item."
+  ERC20_TO_ERC721
 
-    " 3: provide ERC20 item to receive offered ERC1155 item."
-    ERC20_TO_ERC1155,
+  " 3: provide ERC20 item to receive offered ERC1155 item."
+  ERC20_TO_ERC1155
 
-    " 4: provide ERC721 item to receive offered ERC20 item."
-    ERC721_TO_ERC20,
+  " 4: provide ERC721 item to receive offered ERC20 item."
+  ERC721_TO_ERC20
 
-    " 5: provide ERC1155 item to receive offered ERC20 item."
-    ERC1155_TO_ERC20
+  " 5: provide ERC1155 item to receive offered ERC20 item."
+  ERC1155_TO_ERC20
 }
 
 " Order fulfillment methods for trades, helps to identify strategy"
 enum _OrderFulfillmentMethod {
-    " Basic order fulfilled using one of the _BasicOrderRouteType routes"
-    FULFILL_BASIC_ORDER 
+  " Basic order fulfilled using one of the _BasicOrderRouteType routes"
+  FULFILL_BASIC_ORDER
 
-    " Fulfill an order with an arbitrary number of items for offer and consideration"
-    FULFILL_ORDER 
+  " Fulfill an order with an arbitrary number of items for offer and consideration"
+  FULFILL_ORDER
 
-    " Fill an order, fully or partially, with an arbitrary number of items for offer and consideration alongside criteria resolvers "
-    FULFILL_ADVANCED_ORDER 
+  " Fill an order, fully or partially, with an arbitrary number of items for offer and consideration alongside criteria resolvers "
+  FULFILL_ADVANCED_ORDER
 
-    " Attempt to fill a group of orders, each with an arbitrary number of items for offer and consideration."
-    FULFILL_AVAILABLE_ORDERS
+  " Attempt to fill a group of orders, each with an arbitrary number of items for offer and consideration."
+  FULFILL_AVAILABLE_ORDERS
 
-    " Attempt to fill a group of orders, fully or partially, with an arbitrary number of items for offer and consideration per order alongside criteria resolvers"
-    FULFILL_AVAILABLE_ADVANCED_ORDERS
+  " Attempt to fill a group of orders, fully or partially, with an arbitrary number of items for offer and consideration per order alongside criteria resolvers"
+  FULFILL_AVAILABLE_ADVANCED_ORDERS
 
-    " Match an arbitrary number of orders, each with an arbitrary number of items for offer and consideration along with a set of fulfillments allocating offer components to consideration components."
-    MATCH_ORDERS 
+  " Match an arbitrary number of orders, each with an arbitrary number of items for offer and consideration along with a set of fulfillments allocating offer components to consideration components."
+  MATCH_ORDERS
 
-    " Match an arbitrary number of full or partial orders, each with an arbitrary number of items for offer and consideration, supplying criteria resolvers"
-    MATCH_ADVANCED_ORDERS 
-}
-
-type Marketplace @entity {
-  " Smart contract address of the protocol's main contract (Factory, Registry, etc) "
-  id: ID!
-
-  " Name of the NFT marketplace, for example LooksRare "
-  name: String!
-
-  " Slug of the NFT marketplace, for example looksrare "
-  slug: String!
-
-  " The blockchain network this subgraph is indexing on. "
-  network: Network!
-
-  " Version of the subgraph schema, in SemVer format (e.g. 1.0.0) "
-  schemaVersion: String!
-
-  " Version of the subgraph implementation, in SemVer format (e.g. 1.0.0) "
-  subgraphVersion: String!
-
-  " Version of the methodology used to compute metrics, loosely based on SemVer format (e.g. 1.0.0) "
-  methodologyVersion: String!
-
-  " Number of collections listed on the marketplace. "
-  collectionCount: Int!
-
-  " Trade count of the all collections on the marketplace. "
-  tradeCount: Int!
-
-  " Cumulative trade volume (in ETH) "
-  cumulativeTradeVolumeETH: BigDecimal!
-
-  " Revenue that goes to the marketplace protocol, aka protocol fee. "
-  marketplaceRevenueETH: BigDecimal!
-
-  " Revenue that goes to creator, aka royalty fee. "
-  creatorRevenueETH: BigDecimal!
-
-  " Sum of marketplaceRevenueETH and creatorRevenueETH. "
-  totalRevenueETH: BigDecimal!
-
-  " Cumulative unique traders "
-  cumulativeUniqueTraders: Int!
+  " Match an arbitrary number of full or partial orders, each with an arbitrary number of items for offer and consideration, supplying criteria resolvers"
+  MATCH_ADVANCED_ORDERS
 }
 
 type Collection @entity {
@@ -220,94 +176,6 @@ type Trade @entity {
 
   " Seller account address "
   seller: String!
-}
-
-type MarketplaceDailySnapshot @entity {
-  " { Contract address }-{# of days since Unix epoch time} "
-  id: ID!
-
-  " The marketplace that this snapshot belongs to. "
-  marketplace: Marketplace!
-
-  " Block number where the snapshot is taken. "
-  blockNumber: BigInt!
-
-  " Block timestamp when the snapshot is taken. "
-  timestamp: BigInt!
-
-  " Number of collections listed on the marketplace. "
-  collectionCount: Int!
-
-  " Cumulative trade volume (in ETH) "
-  cumulativeTradeVolumeETH: BigDecimal!
-
-  " Revenue that goes to the marketplace protocol, aka protocol fee. "
-  marketplaceRevenueETH: BigDecimal!
-
-  " Revenue that goes to creator, aka royalty fee. "
-  creatorRevenueETH: BigDecimal!
-
-  " Sum of marketplaceRevenueETH and creatorRevenueETH. "
-  totalRevenueETH: BigDecimal!
-
-  " Trade count of the all collections on the marketplace. "
-  tradeCount: Int!
-
-  " Cumulative unique traders "
-  cumulativeUniqueTraders: Int!
-
-  " Daily active traders "
-  dailyActiveTraders: Int!
-
-  " Number of traded collections of the day "
-  dailyTradedCollectionCount: Int!
-
-  " Number of traded items of the day "
-  dailyTradedItemCount: Int!
-}
-
-type CollectionDailySnapshot @entity {
-  " { Contract address }-{# of days since epoch unix time } "
-  id: ID!
-
-  " The collection that this snapshot belongs to. "
-  collection: Collection!
-
-  " Block number where the snapshot is taken. "
-  blockNumber: BigInt!
-
-  " Block timestamp when the snapshot is taken. "
-  timestamp: BigInt!
-
-  " Royalty fee rate in percentage. E.g. 2.5% should be 2.5 "
-  royaltyFee: BigDecimal!
-
-  " Minimum sale price of the day (in ETH) "
-  dailyMinSalePrice: BigDecimal!
-
-  " Maximum sale price of the day (in ETH) "
-  dailyMaxSalePrice: BigDecimal!
-
-  " Cumulative trade volume (in ETH) "
-  cumulativeTradeVolumeETH: BigDecimal!
-
-  " Daily trade volume (in ETH) "
-  dailyTradeVolumeETH: BigDecimal!
-
-  " Revenue that goes to the marketplace protocol, aka protocol fee. "
-  marketplaceRevenueETH: BigDecimal!
-
-  " Revenue that goes to creator, aka royalty fee. "
-  creatorRevenueETH: BigDecimal!
-
-  " Sum of marketplaceRevenue and creatorRevenue. "
-  totalRevenueETH: BigDecimal!
-
-  " Trade count of the collection on the marketplace. "
-  tradeCount: Int!
-
-  " Number of traded items of the day "
-  dailyTradedItemCount: Int!
 }
 
 " A helper entity that maps a trade's order fulfillment method"

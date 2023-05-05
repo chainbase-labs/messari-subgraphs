@@ -6,16 +6,12 @@ import {
 } from "../generated/templates/SeaportContract/SeaportExchange";
 import {
   Collection,
-  CollectionDailySnapshot,
-  Marketplace,
-  MarketplaceDailySnapshot,
   _OrderFulfillment,
   Trade,
   _Item,
 } from "../generated/schema";
 import {
   BIGDECIMAL_HUNDRED,
-  BIGDECIMAL_MAX,
   BIGDECIMAL_ZERO,
   BIGINT_ZERO,
   orderFulfillmentMethod,
@@ -28,20 +24,14 @@ import {
   isNFT,
   isOpenSeaFeeAccount,
   MANTISSA_FACTOR,
-  max,
-  min,
   NftStandard,
   SeaportItemType,
-  SECONDS_PER_DAY,
   WETH_ADDRESS,
 } from "./helper";
 import { NftMetadata } from "../generated/templates/SeaportContract/NftMetadata";
 import { ERC165 } from "../generated/templates/SeaportContract/ERC165";
-import { NetworkConfigs } from "../configurations/configure";
 import { SafeCreate2Call } from "../generated/ImmutableCreate2Factory/ImmutableCreate2Factory";
 import { SeaportContract } from "../generated/templates";
-
-// import { SeaportContract } from "../generated/templates";
 
 class Sale {
   constructor(
@@ -213,129 +203,6 @@ export function handleOrderFulfilled(event: OrderFulfilled): void {
     collection.creatorRevenueETH
   );
   collection.save();
-
-  //
-  // update marketplace
-  //
-  const marketplace = getOrCreateMarketplace(
-    NetworkConfigs.getMarketplaceAddress()
-  );
-  marketplace.tradeCount += 1;
-  marketplace.cumulativeTradeVolumeETH =
-    marketplace.cumulativeTradeVolumeETH.plus(volumeETH);
-  marketplace.marketplaceRevenueETH = marketplace.marketplaceRevenueETH.plus(
-    deltaMarketplaceRevenueETH
-  );
-  marketplace.creatorRevenueETH = marketplace.creatorRevenueETH.plus(
-    deltaCreatorRevenueETH
-  );
-  marketplace.totalRevenueETH = marketplace.marketplaceRevenueETH.plus(
-    marketplace.creatorRevenueETH
-  );
-  const buyerAccountID = "MARKETPLACE_ACCOUNT-".concat(buyer);
-  let buyerAccount = _Item.load(buyerAccountID);
-  if (!buyerAccount) {
-    buyerAccount = new _Item(buyerAccountID);
-    buyerAccount.save();
-    marketplace.cumulativeUniqueTraders += 1;
-  }
-  const sellerAccountID = "MARKETPLACE_ACCOUNT-".concat(seller);
-  let sellerAccount = _Item.load(sellerAccountID);
-  if (!sellerAccount) {
-    sellerAccount = new _Item(sellerAccountID);
-    sellerAccount.save();
-    marketplace.cumulativeUniqueTraders += 1;
-  }
-  marketplace.save();
-
-  // prepare for updating dailyTradedItemCount
-  let newDailyTradedItem = 0;
-  for (let i = 0; i < nNewTrade; i++) {
-    const dailyTradedItemID = "DAILY_TRADED_ITEM-"
-      .concat(collectionAddr)
-      .concat("-")
-      .concat(saleResult.nfts.tokenIds[i].toString())
-      .concat("-")
-      .concat((event.block.timestamp.toI32() / SECONDS_PER_DAY).toString());
-    let dailyTradedItem = _Item.load(dailyTradedItemID);
-    if (!dailyTradedItem) {
-      dailyTradedItem = new _Item(dailyTradedItemID);
-      dailyTradedItem.save();
-      newDailyTradedItem++;
-    }
-  }
-  //
-  // take collection snapshot
-  //
-  const collectionSnapshot = getOrCreateCollectionDailySnapshot(
-    collectionAddr,
-    event.block.timestamp
-  );
-  collectionSnapshot.blockNumber = event.block.number;
-  collectionSnapshot.timestamp = event.block.timestamp;
-  collectionSnapshot.royaltyFee = collection.royaltyFee;
-  collectionSnapshot.dailyMinSalePrice = min(
-    collectionSnapshot.dailyMinSalePrice,
-    priceETH
-  );
-  collectionSnapshot.dailyMaxSalePrice = max(
-    collectionSnapshot.dailyMaxSalePrice,
-    priceETH
-  );
-  collectionSnapshot.cumulativeTradeVolumeETH =
-    collection.cumulativeTradeVolumeETH;
-  collectionSnapshot.marketplaceRevenueETH = collection.marketplaceRevenueETH;
-  collectionSnapshot.creatorRevenueETH = collection.creatorRevenueETH;
-  collectionSnapshot.totalRevenueETH = collection.totalRevenueETH;
-  collectionSnapshot.tradeCount = collection.tradeCount;
-  collectionSnapshot.dailyTradeVolumeETH =
-    collectionSnapshot.dailyTradeVolumeETH.plus(volumeETH);
-  collectionSnapshot.dailyTradedItemCount += newDailyTradedItem;
-  collectionSnapshot.save();
-
-  //
-  // take marketplace snapshot
-  //
-  const marketplaceSnapshot = getOrCreateMarketplaceDailySnapshot(
-    event.block.timestamp
-  );
-  marketplaceSnapshot.blockNumber = event.block.number;
-  marketplaceSnapshot.timestamp = event.block.timestamp;
-  marketplaceSnapshot.collectionCount = marketplace.collectionCount;
-  marketplaceSnapshot.cumulativeTradeVolumeETH =
-    marketplace.cumulativeTradeVolumeETH;
-  marketplaceSnapshot.marketplaceRevenueETH = marketplace.marketplaceRevenueETH;
-  marketplaceSnapshot.creatorRevenueETH = marketplace.creatorRevenueETH;
-  marketplaceSnapshot.totalRevenueETH = marketplace.totalRevenueETH;
-  marketplaceSnapshot.tradeCount = marketplace.tradeCount;
-  marketplaceSnapshot.cumulativeUniqueTraders =
-    marketplace.cumulativeUniqueTraders;
-  const dailyBuyerID = "DAILY_MARKERPLACE_ACCOUNT-".concat(buyer);
-  let dailyBuyer = _Item.load(dailyBuyerID);
-  if (!dailyBuyer) {
-    dailyBuyer = new _Item(dailyBuyerID);
-    dailyBuyer.save();
-    marketplaceSnapshot.dailyActiveTraders += 1;
-  }
-  const dailySellerID = "DAILY_MARKETPLACE_ACCOUNT-".concat(seller);
-  let dailySeller = _Item.load(dailySellerID);
-  if (!dailySeller) {
-    dailySeller = new _Item(dailySellerID);
-    dailySeller.save();
-    marketplaceSnapshot.dailyActiveTraders += 1;
-  }
-  const dailyTradedCollectionID = "DAILY_TRADED_COLLECTION-"
-    .concat(collectionAddr)
-    .concat("-")
-    .concat((event.block.timestamp.toI32() / SECONDS_PER_DAY).toString());
-  let dailyTradedCollection = _Item.load(dailyTradedCollectionID);
-  if (!dailyTradedCollection) {
-    dailyTradedCollection = new _Item(dailyTradedCollectionID);
-    dailyTradedCollection.save();
-    marketplaceSnapshot.dailyTradedCollectionCount += 1;
-  }
-  marketplaceSnapshot.dailyTradedItemCount += newDailyTradedItem;
-  marketplaceSnapshot.save();
 }
 
 function getOrCreateCollection(collectionID: string): Collection {
@@ -365,89 +232,8 @@ function getOrCreateCollection(collectionID: string): Collection {
     collection.buyerCount = 0;
     collection.sellerCount = 0;
     collection.save();
-
-    const marketplace = getOrCreateMarketplace(
-      NetworkConfigs.getMarketplaceAddress()
-    );
-    marketplace.collectionCount += 1;
-    marketplace.save();
   }
   return collection;
-}
-
-function getOrCreateMarketplace(marketplaceID: string): Marketplace {
-  let marketplace = Marketplace.load(marketplaceID);
-  if (!marketplace) {
-    marketplace = new Marketplace(marketplaceID);
-    marketplace.name = NetworkConfigs.getProtocolName();
-    marketplace.slug = NetworkConfigs.getProtocolSlug();
-    marketplace.network = NetworkConfigs.getNetwork();
-    marketplace.schemaVersion = NetworkConfigs.getSchemaVersion();
-    marketplace.subgraphVersion = NetworkConfigs.getSubgraphVersion();
-    marketplace.methodologyVersion = NetworkConfigs.getMethodologyVersion();
-    marketplace.collectionCount = 0;
-    marketplace.tradeCount = 0;
-    marketplace.cumulativeTradeVolumeETH = BIGDECIMAL_ZERO;
-    marketplace.marketplaceRevenueETH = BIGDECIMAL_ZERO;
-    marketplace.creatorRevenueETH = BIGDECIMAL_ZERO;
-    marketplace.totalRevenueETH = BIGDECIMAL_ZERO;
-    marketplace.cumulativeUniqueTraders = 0;
-    marketplace.save();
-  }
-  return marketplace;
-}
-
-function getOrCreateCollectionDailySnapshot(
-  collection: string,
-  timestamp: BigInt
-): CollectionDailySnapshot {
-  const snapshotID = collection
-    .concat("-")
-    .concat((timestamp.toI32() / SECONDS_PER_DAY).toString());
-  let snapshot = CollectionDailySnapshot.load(snapshotID);
-  if (!snapshot) {
-    snapshot = new CollectionDailySnapshot(snapshotID);
-    snapshot.collection = collection;
-    snapshot.blockNumber = BIGINT_ZERO;
-    snapshot.timestamp = BIGINT_ZERO;
-    snapshot.royaltyFee = BIGDECIMAL_ZERO;
-    snapshot.dailyMinSalePrice = BIGDECIMAL_MAX;
-    snapshot.dailyMaxSalePrice = BIGDECIMAL_ZERO;
-    snapshot.cumulativeTradeVolumeETH = BIGDECIMAL_ZERO;
-    snapshot.dailyTradeVolumeETH = BIGDECIMAL_ZERO;
-    snapshot.marketplaceRevenueETH = BIGDECIMAL_ZERO;
-    snapshot.creatorRevenueETH = BIGDECIMAL_ZERO;
-    snapshot.totalRevenueETH = BIGDECIMAL_ZERO;
-    snapshot.tradeCount = 0;
-    snapshot.dailyTradedItemCount = 0;
-    snapshot.save();
-  }
-  return snapshot;
-}
-
-function getOrCreateMarketplaceDailySnapshot(
-  timestamp: BigInt
-): MarketplaceDailySnapshot {
-  const snapshotID = (timestamp.toI32() / SECONDS_PER_DAY).toString();
-  let snapshot = MarketplaceDailySnapshot.load(snapshotID);
-  if (!snapshot) {
-    snapshot = new MarketplaceDailySnapshot(snapshotID);
-    snapshot.marketplace = NetworkConfigs.getMarketplaceAddress();
-    snapshot.blockNumber = BIGINT_ZERO;
-    snapshot.timestamp = BIGINT_ZERO;
-    snapshot.collectionCount = 0;
-    snapshot.cumulativeTradeVolumeETH = BIGDECIMAL_ZERO;
-    snapshot.marketplaceRevenueETH = BIGDECIMAL_ZERO;
-    snapshot.creatorRevenueETH = BIGDECIMAL_ZERO;
-    snapshot.totalRevenueETH = BIGDECIMAL_ZERO;
-    snapshot.tradeCount = 0;
-    snapshot.cumulativeUniqueTraders = 0;
-    snapshot.dailyTradedItemCount = 0;
-    snapshot.dailyActiveTraders = 0;
-    snapshot.dailyTradedCollectionCount = 0;
-    snapshot.save();
-  }
-  return snapshot;
 }
 
 function getNftStandard(collectionID: string): string {
