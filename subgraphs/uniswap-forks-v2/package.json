@@ -1,0 +1,16 @@
+{
+  "license": "MIT",
+  "scripts": {
+    "format": "npx prettier --write .",
+    "codegen": "graph codegen",
+    "prepare:constants": "mustache protocols/${npm_config_protocol}/config/deployments/${npm_config_id}/configurations.json configurations/configure.mustache > configurations/configure.ts"
+  },
+  "dependencies": {
+    "@graphprotocol/graph-cli": "0.28.0",
+    "@graphprotocol/graph-ts": "0.26.0",
+    "npx": "^10.2.2"
+  },
+  "devDependencies": {
+    "prettier": "^2.6.0"
+  }
+}
