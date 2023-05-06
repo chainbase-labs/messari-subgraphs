@@ -165,9 +165,6 @@ export function createSwapHandleVolumeAndFees(
   const token0 = getOrCreateToken(event, pool.inputTokens[0]);
   const token1 = getOrCreateToken(event, pool.inputTokens[1]);
 
-  token0.save();
-  token1.save();
-
   // Gets the tokenIn and tokenOut payload based on the amounts
   const swapTokens = getSwapTokens(
     token0,
