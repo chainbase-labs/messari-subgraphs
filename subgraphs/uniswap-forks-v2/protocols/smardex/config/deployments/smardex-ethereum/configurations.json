@@ -1,0 +1,8 @@
+{
+  "deployment": "SMARDEX_ETHEREUM",
+  "network": "mainnet",
+  "factory": {
+    "address": "0x7753f36e711b66a0350a753aba9f5651bae76a1d",
+    "startBlock": 16793955
+  }
+}
