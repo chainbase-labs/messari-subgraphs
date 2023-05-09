@@ -31,6 +31,7 @@ import { BiswapBscConfigurations } from "../../protocols/biswap/config/deploymen
 import { Configurations } from "./interface";
 import { Deploy } from "./deploy";
 import { log } from "@graphprotocol/graph-ts";
+import { DefiswapMainnetConfigurations } from "../../protocols/defiswap/config/deployments/defiswap-ethereum/configurations";
 
 // This function is called to load in the proper configurations for a protocol/network deployment.
 // To add a new deployment, add a value to the `Deploy` namespace and add a new configuration class to the network specific typescript file in the `protocols` folder.
@@ -123,6 +124,9 @@ export function getNetworkConfigurations(deploy: i32): Configurations {
     }
     case Deploy.BISWAP_BSC: {
       return new BiswapBscConfigurations();
+    }
+    case Deploy.DEFISWAP_ETHEREUM: {
+      return new DefiswapMainnetConfigurations();
     }
     default: {
       log.critical(
