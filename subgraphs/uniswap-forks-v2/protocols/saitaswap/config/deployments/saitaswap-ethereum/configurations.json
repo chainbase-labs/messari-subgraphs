@@ -1,0 +1,8 @@
+{
+  "deployment": "SAITASWAP_ETHEREUM",
+  "network": "mainnet",
+  "factory": {
+    "address": "0x35113a300ca0d7621374890abfeac30e88f214b1",
+    "startBlock": 15210779
+  }
+}
