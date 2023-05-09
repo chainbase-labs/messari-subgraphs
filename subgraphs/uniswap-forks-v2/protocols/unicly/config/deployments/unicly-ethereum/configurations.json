@@ -1,0 +1,8 @@
+{
+  "deployment": "UNICLY_ETHEREUM",
+  "network": "mainnet",
+  "factory": {
+    "address": "0xbacc776b231c571a7e6ab7bc2c8a099e07153377",
+    "startBlock": 12142298
+  }
+}
