@@ -1,0 +1,8 @@
+{
+  "deployment": "ORION_ETHEREUM",
+  "network": "mainnet",
+  "factory": {
+    "address": "0x5fa0060fcfea35b31f7a5f6025f0ff399b98edf1",
+    "startBlock": 12630117
+  }
+}

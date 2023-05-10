@@ -37,4 +37,5 @@ export namespace Deploy {
   export const DEFISWAP_ETHEREUM = 32;
   export const UNICLY_ETHEREUM = 33;
   export const SAITASWAP_ETHEREUM = 34;
+  export const ORION_ETHEREUM = 35;
 }
