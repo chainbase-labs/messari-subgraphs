@@ -33,6 +33,7 @@ import { Deploy } from "./deploy";
 import { log } from "@graphprotocol/graph-ts";
 import { ShibaswapMainnetConfigurations } from "../../protocols/shibaswap/config/deployments/shibaswap-ethereum/configurations";
 import { SashimiswapMainnetConfigurations } from "../../protocols/sashimiswap/config/deployments/sashimiswap-ethereum/configurations";
+import { VerseMainnetConfigurations } from "../../protocols/verse/config/deployments/verse-ethereum/configurations";
 
 // This function is called to load in the proper configurations for a protocol/network deployment.
 // To add a new deployment, add a value to the `Deploy` namespace and add a new configuration class to the network specific typescript file in the `protocols` folder.
@@ -131,6 +132,9 @@ export function getNetworkConfigurations(deploy: i32): Configurations {
     }
     case Deploy.SASHIMISWAP_ETHEREUM: {
       return new SashimiswapMainnetConfigurations();
+    }
+    case Deploy.VERSE_ETHEREUM: {
+      return new VerseMainnetConfigurations();
     }
     default: {
       log.critical(

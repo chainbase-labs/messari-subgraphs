@@ -1,0 +1,8 @@
+{
+  "deployment": "VERSE_ETHEREUM",
+  "network": "mainnet",
+  "factory": {
+    "address": "0xee3e9e46e34a27dc755a63e2849c9913ee1a06e2",
+    "startBlock": 14931468
+  }
+}
