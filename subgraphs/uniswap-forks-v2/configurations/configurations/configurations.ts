@@ -31,6 +31,7 @@ import { BiswapBscConfigurations } from "../../protocols/biswap/config/deploymen
 import { Configurations } from "./interface";
 import { Deploy } from "./deploy";
 import { log } from "@graphprotocol/graph-ts";
+import { OrionMainnetConfigurations } from "../../protocols/orion/config/deployments/orion-ethereum/configurations";
 import { SashimiswapMainnetConfigurations } from "../../protocols/sashimiswap/config/deployments/sashimiswap-ethereum/configurations";
 
 // This function is called to load in the proper configurations for a protocol/network deployment.
@@ -124,6 +125,9 @@ export function getNetworkConfigurations(deploy: i32): Configurations {
     }
     case Deploy.BISWAP_BSC: {
       return new BiswapBscConfigurations();
+    }
+    case Deploy.ORION_ETHEREUM: {
+      return new OrionMainnetConfigurations();
     }
     case Deploy.SASHIMISWAP_ETHEREUM: {
       return new SashimiswapMainnetConfigurations();
