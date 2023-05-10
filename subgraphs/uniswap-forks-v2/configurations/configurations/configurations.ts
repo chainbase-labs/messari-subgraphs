@@ -35,6 +35,7 @@ import { ShibaswapMainnetConfigurations } from "../../protocols/shibaswap/config
 import { SashimiswapMainnetConfigurations } from "../../protocols/sashimiswap/config/deployments/sashimiswap-ethereum/configurations";
 import { VerseMainnetConfigurations } from "../../protocols/verse/config/deployments/verse-ethereum/configurations";
 import { DefiswapMainnetConfigurations } from "../../protocols/defiswap/config/deployments/defiswap-ethereum/configurations";
+import { UniclyMainnetConfigurations } from "../../protocols/unicly/config/deployments/unicly-ethereum/configurations";
 
 // This function is called to load in the proper configurations for a protocol/network deployment.
 // To add a new deployment, add a value to the `Deploy` namespace and add a new configuration class to the network specific typescript file in the `protocols` folder.
@@ -139,6 +140,9 @@ export function getNetworkConfigurations(deploy: i32): Configurations {
     }
     case Deploy.DEFISWAP_ETHEREUM: {
       return new DefiswapMainnetConfigurations();
+    }
+    case Deploy.UNICLY_ETHEREUM: {
+      return new UniclyMainnetConfigurations();
     }
     default: {
       log.critical(
