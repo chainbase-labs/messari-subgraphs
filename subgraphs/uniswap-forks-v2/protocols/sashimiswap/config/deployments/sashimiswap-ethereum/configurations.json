@@ -1,0 +1,12 @@
+{
+  "deployment": "SASHIMISWAP_ETHEREUM",
+  "network": "mainnet",
+  "factory": {
+    "address": "0xf028f723ed1d0fe01cc59973c49298aa95c57472",
+    "startBlock": 10943132
+  },
+  "factory2": {
+    "address": "0xc03efb3e3ddfb0c0f3c148a2afe10ccfa1c5819e",
+    "startBlock": 14086930
+  }
+}

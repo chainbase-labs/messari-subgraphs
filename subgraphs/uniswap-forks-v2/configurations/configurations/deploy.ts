@@ -32,4 +32,5 @@ export namespace Deploy {
   export const PANGOLIN_AVALANCHE = 27;
   export const BISWAP_BSC = 28;
   export const SHIBASWAP_ETHEREUM = 29;
+  export const SASHIMISWAP_ETHEREUM = 30;
 }
