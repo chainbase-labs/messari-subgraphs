@@ -34,4 +34,5 @@ export namespace Deploy {
   export const SHIBASWAP_ETHEREUM = 29;
   export const SASHIMISWAP_ETHEREUM = 30;
   export const VERSE_ETHEREUM = 31;
+  export const DEFISWAP_ETHEREUM = 32;
 }
