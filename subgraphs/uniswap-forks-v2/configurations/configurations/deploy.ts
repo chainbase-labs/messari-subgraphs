@@ -31,4 +31,6 @@ export namespace Deploy {
   export const MM_FINANCE_POLYGON = 26;
   export const PANGOLIN_AVALANCHE = 27;
   export const BISWAP_BSC = 28;
+
+  export const ORION_ETHEREUM = 35;
 }
