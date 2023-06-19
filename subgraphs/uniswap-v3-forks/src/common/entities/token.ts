@@ -51,6 +51,7 @@ export function getOrCreateToken(
     }
     token.lastPriceUSD = BIGDECIMAL_ZERO;
     token.lastPriceBlockNumber = BIGINT_ZERO;
+
     token._totalSupply = BIGINT_ZERO;
     token._totalValueLockedUSD = BIGDECIMAL_ZERO;
     token._largeTVLImpactBuffer = 0;
@@ -64,7 +65,7 @@ export function getOrCreateToken(
   }
 
   if (
-    token.lastPriceBlockNumber! &&
+    token.lastPriceBlockNumber &&
     event.block.number.minus(token.lastPriceBlockNumber!).gt(BIGINT_TEN) &&
     getNewPrice
   ) {
@@ -124,7 +125,7 @@ export function getOrCreateTokenWhitelistSymbol(
   // fetch info if null
   if (!tokenWhitelistSymbol) {
     tokenWhitelistSymbol = new _TokenWhitelistSymbol(formattedTokenSymbol);
-    tokenWhitelistSymbol.address = tokenAddress!;
+    tokenWhitelistSymbol.address = tokenAddress;
     tokenWhitelistSymbol.save();
   }
 
