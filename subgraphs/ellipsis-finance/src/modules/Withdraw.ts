@@ -1,19 +1,19 @@
 import {
-  log,
-  BigInt,
-  crypto,
   Address,
-  ethereum,
-  ByteArray,
   BigDecimal,
+  BigInt,
+  ByteArray,
+  crypto,
+  ethereum,
+  log,
 } from "@graphprotocol/graph-ts";
 import {
-  Withdraw as WithdrawTransaction,
   LiquidityPool as LiquidityPoolStore,
+  Withdraw as WithdrawTransaction,
 } from "../../generated/schema";
 import {
-  getOrCreateLiquidityPool,
   getOrCreateDexAmmProtocol,
+  getOrCreateLiquidityPool,
   getOrCreateUsageMetricsDailySnapshot,
   getOrCreateUsageMetricsHourlySnapshot,
 } from "../common/initializers";
@@ -27,12 +27,13 @@ export function createWithdrawTransaction(
   amountUSD: BigDecimal,
   provider: Address,
   transaction: ethereum.Transaction,
-  block: ethereum.Block
+  block: ethereum.Block,
+  event: ethereum.Event
 ): WithdrawTransaction {
   const withdrawTransactionId = "withdraw-"
     .concat(transaction.hash.toHexString())
     .concat("-")
-    .concat(transaction.index.toString());
+    .concat(event.logIndex.toString());
 
   let withdrawTransaction = WithdrawTransaction.load(withdrawTransactionId);
 
@@ -48,7 +49,7 @@ export function createWithdrawTransaction(
     withdrawTransaction.from = provider.toHexString();
 
     withdrawTransaction.hash = transaction.hash.toHexString();
-    withdrawTransaction.logIndex = transaction.index.toI32();
+    withdrawTransaction.logIndex = event.logIndex.toI32();
 
     withdrawTransaction.inputTokens = pool.inputTokens;
     withdrawTransaction.inputTokenAmounts = inputTokenAmounts;
@@ -237,7 +238,8 @@ export function Withdraw(
     withdrawAmountUSD,
     provider,
     transaction,
-    block
+    block,
+    event
   );
   utils.updateProtocolTotalValueLockedUSD();
   UpdateMetricsAfterWithdraw(block);
@@ -253,5 +255,3 @@ export function Withdraw(
     ]
   );
 }
-
-

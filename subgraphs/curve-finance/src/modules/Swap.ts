@@ -1,23 +1,23 @@
 import {
-  Token,
-  Swap as SwapTransaction,
   LiquidityPool as LiquidityPoolStore,
+  Swap as SwapTransaction,
+  Token,
 } from "../../generated/schema";
 import {
-  log,
-  BigInt,
   Address,
-  ethereum,
   BigDecimal,
+  BigInt,
+  ethereum,
+  log,
 } from "@graphprotocol/graph-ts";
 import {
-  updateTokenVolume,
   updateProtocolRevenue,
   updateSnapshotsVolume,
+  updateTokenVolume,
 } from "./Metrics";
 import {
-  getOrCreateLiquidityPool,
   getOrCreateDexAmmProtocol,
+  getOrCreateLiquidityPool,
   getOrCreateUsageMetricsDailySnapshot,
   getOrCreateUsageMetricsHourlySnapshot,
 } from "../common/initializers";
@@ -34,7 +34,8 @@ export function createSwapTransaction(
   amountOutUSD: BigDecimal,
   buyer: Address,
   transaction: ethereum.Transaction,
-  block: ethereum.Block
+  block: ethereum.Block,
+  event: ethereum.Event
 ): SwapTransaction {
   const transactionId = "swap-"
     .concat(transaction.hash.toHexString())
@@ -53,7 +54,7 @@ export function createSwapTransaction(
     swapTransaction.from = buyer.toHexString();
 
     swapTransaction.hash = transaction.hash.toHexString();
-    swapTransaction.logIndex = transaction.index.toI32();
+    swapTransaction.logIndex = event.logIndex.toI32();
 
     swapTransaction.tokenIn = tokenIn.id;
     swapTransaction.amountIn = amountIn;
@@ -97,6 +98,7 @@ export function Swap(
   buyer: Address,
   transaction: ethereum.Transaction,
   block: ethereum.Block,
+  event: ethereum.Event,
   underlying: boolean = false
 ): void {
   const pool = getOrCreateLiquidityPool(liquidityPoolAddress, block);
@@ -148,7 +150,8 @@ export function Swap(
     amountOutUSD,
     buyer,
     transaction,
-    block
+    block,
+    event
   );
 
   const volumeUSD = utils.calculateAverage([amountInUSD, amountOutUSD]);

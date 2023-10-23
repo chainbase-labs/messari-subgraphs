@@ -1,20 +1,20 @@
 import {
-  log,
-  BigInt,
   Address,
-  ethereum,
   BigDecimal,
+  BigInt,
+  ethereum,
+  log,
 } from "@graphprotocol/graph-ts";
 import {
   Deposit as DepositTransaction,
   LiquidityPool as LiquidityPoolStore,
 } from "../../generated/schema";
 import {
-  getOrCreateLiquidityPool,
   getOrCreateDexAmmProtocol,
+  getOrCreateLiquidityPool,
+  getOrCreateToken,
   getOrCreateUsageMetricsDailySnapshot,
   getOrCreateUsageMetricsHourlySnapshot,
-  getOrCreateToken,
 } from "../common/initializers";
 import * as utils from "../common/utils";
 import * as constants from "../common/constants";
@@ -27,12 +27,13 @@ export function createDepositTransaction(
   amountUSD: BigDecimal,
   provider: Address,
   transaction: ethereum.Transaction,
-  block: ethereum.Block
+  block: ethereum.Block,
+  event: ethereum.Event
 ): DepositTransaction {
   const transactionId = "deposit-"
     .concat(transaction.hash.toHexString())
     .concat("-")
-    .concat(transaction.index.toString());
+    .concat(event.logIndex.toString());
 
   let depositTransaction = DepositTransaction.load(transactionId);
 
@@ -46,7 +47,7 @@ export function createDepositTransaction(
     depositTransaction.from = provider.toHexString();
 
     depositTransaction.hash = transaction.hash.toHexString();
-    depositTransaction.logIndex = transaction.index.toI32();
+    depositTransaction.logIndex = event.logIndex.toI32();
 
     depositTransaction.inputTokens = inputTokens;
     depositTransaction.inputTokenAmounts = inputTokenAmounts;
@@ -88,7 +89,8 @@ export function Deposit(
   totalSupplyAfterDeposit: BigInt,
   provider: Address,
   transaction: ethereum.Transaction,
-  block: ethereum.Block
+  block: ethereum.Block,
+  event: ethereum.Event
 ): void {
   const pool = getOrCreateLiquidityPool(poolAddress, block);
 
@@ -147,7 +149,8 @@ export function Deposit(
     depositAmountUSD,
     provider,
     transaction,
-    block
+    block,
+    event
   );
 
   utils.updateProtocolTotalValueLockedUSD();

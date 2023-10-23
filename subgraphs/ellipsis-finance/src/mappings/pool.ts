@@ -1,4 +1,4 @@
- import {
+import {
   updateFinancials,
   updatePoolSnapshots,
   updateUsageMetrics,
@@ -6,14 +6,14 @@
 import {
   AddLiquidity,
   AddLiquidity1 as AddLiquidityWithSingleFee,
-  TokenExchange,
-  TokenExchange1 as TokenExchaneWithUintSoldId,
   RemoveLiquidity,
   RemoveLiquidity2 as RemoveLiquidityWithoutFee,
+  RemoveLiquidityImbalance,
   RemoveLiquidityOne,
   RemoveLiquidityOne1 as RemoveLiquidityOneWithoutTokenSupply,
+  TokenExchange,
+  TokenExchange1 as TokenExchaneWithUintSoldId,
   TokenExchangeUnderlying,
-  RemoveLiquidityImbalance,
 } from "../../generated/templates/PoolTemplate/Pool";
 import { Swap } from "../modules/Swap";
 import { Deposit } from "../modules/Deposit";
@@ -34,13 +34,15 @@ export function handleAddLiquidity(event: AddLiquidity): void {
     totalSupply,
     provider,
     event.transaction,
-    event.block
+    event.block,
+    event
   );
 
   updateUsageMetrics(event.block, provider);
   updatePoolSnapshots(liquidityPoolAddress, event.block);
   updateFinancials(event.block);
 }
+
 export function handleAddLiquidityWithSingleFee(
   event: AddLiquidityWithSingleFee
 ): void {
@@ -56,7 +58,8 @@ export function handleAddLiquidityWithSingleFee(
     totalSupply,
     provider,
     event.transaction,
-    event.block
+    event.block,
+    event
   );
 
   updateUsageMetrics(event.block, provider);
@@ -85,6 +88,7 @@ export function handleRemoveLiquidity(event: RemoveLiquidity): void {
   updatePoolSnapshots(liquidityPoolAddress, event.block);
   updateFinancials(event.block);
 }
+
 export function handleRemoveLiquidityWithoutFee(
   event: RemoveLiquidityWithoutFee
 ): void {
@@ -108,6 +112,7 @@ export function handleRemoveLiquidityWithoutFee(
   updatePoolSnapshots(liquidityPoolAddress, event.block);
   updateFinancials(event.block);
 }
+
 export function handleRemoveLiquidityImbalance(
   event: RemoveLiquidityImbalance
 ): void {
@@ -131,6 +136,7 @@ export function handleRemoveLiquidityImbalance(
   updatePoolSnapshots(liquidityPoolAddress, event.block);
   updateFinancials(event.block);
 }
+
 export function handleRemoveLiquidityOne(event: RemoveLiquidityOne): void {
   const provider = event.params.provider;
   const liquidityPoolAddress = event.address;
@@ -152,6 +158,7 @@ export function handleRemoveLiquidityOne(event: RemoveLiquidityOne): void {
   updatePoolSnapshots(liquidityPoolAddress, event.block);
   updateFinancials(event.block);
 }
+
 export function handleRemoveLiquidityOneWithoutTokenSupply(
   event: RemoveLiquidityOneWithoutTokenSupply
 ): void {
@@ -175,6 +182,7 @@ export function handleRemoveLiquidityOneWithoutTokenSupply(
   updatePoolSnapshots(liquidityPoolAddress, event.block);
   updateFinancials(event.block);
 }
+
 export function handleTokenExchange(event: TokenExchange): void {
   const buyer = event.params.buyer;
   const liquidityPoolAddress = event.address;
@@ -193,7 +201,8 @@ export function handleTokenExchange(event: TokenExchange): void {
     amountOut,
     buyer,
     event.transaction,
-    event.block
+    event.block,
+    event
   );
 
   updateUsageMetrics(event.block, buyer);
@@ -221,7 +230,8 @@ export function handleTokenExchangeWithUintSoldId(
     amountOut,
     buyer,
     event.transaction,
-    event.block
+    event.block,
+    event
   );
 
   updateUsageMetrics(event.block, buyer);
@@ -238,8 +248,21 @@ export function handleTokenExchangeUnderlying(
   const amountIn = event.params.tokens_sold;
   const boughtId = event.params.bought_id;
   const amountOut = event.params.tokens_bought;
-  if(liquidityPoolAddress.equals(Address.fromString("0x19ec9e3f7b21dd27598e7ad5aae7dc0db00a806d"))){
-    log.warning("[TokenExchangeUnderlying] Pool {} soldId {} boughtId {} amountIn {} amountOut {}",[liquidityPoolAddress.toHexString(),soldId.toString(),boughtId.toString(),amountIn.toString(),amountOut.toString()])
+  if (
+    liquidityPoolAddress.equals(
+      Address.fromString("0x19ec9e3f7b21dd27598e7ad5aae7dc0db00a806d")
+    )
+  ) {
+    log.warning(
+      "[TokenExchangeUnderlying] Pool {} soldId {} boughtId {} amountIn {} amountOut {}",
+      [
+        liquidityPoolAddress.toHexString(),
+        soldId.toString(),
+        boughtId.toString(),
+        amountIn.toString(),
+        amountOut.toString(),
+      ]
+    );
   }
   Swap(
     liquidityPoolAddress,
@@ -250,6 +273,7 @@ export function handleTokenExchangeUnderlying(
     buyer,
     event.transaction,
     event.block,
+    event,
     true
   );
 

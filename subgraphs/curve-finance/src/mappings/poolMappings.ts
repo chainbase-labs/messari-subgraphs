@@ -1,18 +1,18 @@
 import {
   updateFinancials,
-  updateUsageMetrics,
   updatePoolSnapshots,
+  updateUsageMetrics,
 } from "../modules/Metrics";
 import {
   AddLiquidity,
-  TokenExchange,
-  RemoveLiquidity,
-  RemoveLiquidityOne,
-  TokenExchangeUnderlying,
-  RemoveLiquidityImbalance,
   AddLiquidity2 as AddLiquidityWithFees,
+  RemoveLiquidity,
   RemoveLiquidity2 as RemoveLiquidityWithFees,
+  RemoveLiquidityImbalance,
+  RemoveLiquidityOne,
   RemoveLiquidityOne1 as RemoveLiquidityOneWithSupply,
+  TokenExchange,
+  TokenExchangeUnderlying,
 } from "../../generated/templates/PoolTemplate/Pool";
 import { Swap } from "../modules/Swap";
 import { Deposit } from "../modules/Deposit";
@@ -36,7 +36,8 @@ export function handleTokenExchange(event: TokenExchange): void {
     amountOut,
     buyer,
     event.transaction,
-    event.block
+    event.block,
+    event
   );
 
   updateUsageMetrics(event.block, buyer);
@@ -63,6 +64,7 @@ export function handleTokenExchangeUnderlying(
     buyer,
     event.transaction,
     event.block,
+    event,
     true
   );
 
@@ -84,7 +86,8 @@ export function handleAddLiquidity(event: AddLiquidity): void {
     totalSupply,
     provider,
     event.transaction,
-    event.block
+    event.block,
+    event
   );
 
   updateUsageMetrics(event.block, provider);
@@ -105,7 +108,8 @@ export function handleAddLiquidityWithFees(event: AddLiquidityWithFees): void {
     totalSupply,
     provider,
     event.transaction,
-    event.block
+    event.block,
+    event
   );
 
   updateUsageMetrics(event.block, provider);
