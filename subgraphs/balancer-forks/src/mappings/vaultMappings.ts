@@ -1,17 +1,17 @@
 import {
-  PoolRegistered,
-  TokensRegistered,
-  Swap as SwapEvent,
   PoolBalanceChanged,
+  PoolRegistered,
+  Swap as SwapEvent,
+  TokensRegistered,
 } from "../../generated/Vault/Vault";
 import {
   updateFinancials,
-  updateUsageMetrics,
   updatePoolSnapshots,
+  updateUsageMetrics,
 } from "../modules/Metrics";
 import {
-  getOrCreateToken,
   getOrCreateLiquidityPool,
+  getOrCreateToken,
 } from "../common/initializers";
 import { Swap } from "../modules/Swap";
 import * as utils from "../common/utils";
@@ -85,7 +85,8 @@ export function handlePoolBalanceChanged(event: PoolBalanceChanged): void {
       fees,
       provider,
       event.transaction,
-      event.block
+      event.block,
+      event
     );
   } else {
     Withdraw(
@@ -95,7 +96,8 @@ export function handlePoolBalanceChanged(event: PoolBalanceChanged): void {
       fees,
       provider,
       event.transaction,
-      event.block
+      event.block,
+      event
     );
   }
 
@@ -121,7 +123,8 @@ export function handleSwap(event: SwapEvent): void {
     tokenOut,
     amountOut,
     event.transaction,
-    event.block
+    event.block,
+    event
   );
 
   updateUsageMetrics(event.block, event.transaction.from);
